@@ -21,7 +21,7 @@ class MultiButFrame(Frame) :
 			self.rows.append(Frame(self))
 		rownbr=-1
 		for i,name in enumerate(classnames):
-			if(i%4==0):
+			if(i % 4==0):
 				rownbr+=1
 			self.buttons.append(Button(self.rows[rownbr], command=self.buttonfunc(datapath+name),text=name,font=("Unispace", 12, "bold"),
 				activebackground="sky blue",bg="blue",foreground="sky blue",width=-15))

@@ -1,12 +1,10 @@
 from tkinter import *
 
 
-from PIL import Image
 from MultiButFrame import MultiButFrame
 from PicFrame import PicFrame
+from OptionPanel import OptionPanel
 import tkinter.font as tkfont
-import numpy as np
-import glob
 import os
 
 
@@ -18,16 +16,20 @@ class MainWindow(Tk):
 		Tk.__init__(self, **kwargs)
 		fontana = tkfont.Font(family="Unispace", size=12, weight="bold")
 		m_len = fontana.measure("M")
-		width=(m_len+2*1)*15*4;
-		height=600;
-		
+		width=(m_len+2*1)*15*4
+		height=600
 		self.geometry(str(width)+"x"+str(height))
-		os.chdir(os.path.dirname(__file__))#Change to working directory
+		os.chdir(os.path.dirname(__file__))  # Change to working directory
+
+		top = OptionPanel(self)
+		top.wait_window()
+		raw_imgfold = top.getFolder()
+
+		self.lift()
 		# CREATE FOLDERS IF NOT DONE YET
 		path = "Data\\"
 		if(not os.path.exists("Data\\")):
 			os.mkdir("Data")
-			print("Heello ?")
 		paths = ["WhaleInWater", "WhaleOutWater", "NotAWhale"]
 		paths = ["Data\\"+paths[i] for i in range(len(paths))]
 
@@ -36,7 +38,7 @@ class MainWindow(Tk):
 				os.mkdir(path)
 
 		upframe = Frame(self)
-		self.picframe= PicFrame(upframe,"RawImages\\")
+		self.picframe= PicFrame(upframe,os.path.join(raw_imgfold,""))
 		downframe = MultiButFrame(self)
 
 
