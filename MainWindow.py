@@ -24,14 +24,14 @@ class MainWindow(Tk):
 		top = OptionPanel(self)
 		top.wait_window()
 		raw_imgfold = top.getFolder()
-
+		if(raw_imgfold is None):
+			raise ValueError("Raw image folder not found")
 		self.lift()
 		# CREATE FOLDERS IF NOT DONE YET
 		path = "Data\\"
 		if(not os.path.exists("Data\\")):
 			os.mkdir("Data")
-		paths = ["WhaleInWater", "WhaleOutWater", "NotAWhale"]
-		paths = ["Data\\"+paths[i] for i in range(len(paths))]
+		paths=[path+fold for fold in os.listdir(path)]
 
 		for path in paths:
 			if(not os.path.exists(path)):

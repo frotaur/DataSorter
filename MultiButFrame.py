@@ -33,4 +33,4 @@ class MultiButFrame(Frame) :
 			row.pack(side=TOP,fill=BOTH)
 
 	def buttonfunc(self,targetfolder):
-		print("I AM THE ALMIGHTY",targetfolder)
+		pass
