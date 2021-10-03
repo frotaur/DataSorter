@@ -18,12 +18,17 @@ class MainWindow(Tk):
 		# m_len = fontana.measure("M")
 		# width=(m_len+2*1)*15*4
 		width=960
-		height=620
+		height=820
 		self.geometry(str(width)+"x"+str(height))
 		os.chdir(os.path.dirname(__file__))  # Change to working directory
 
-		self.top = OptionPanel(self)
+		# CREATE FOLDERS IF NOT DONE YET
+		path = "Data\\"
+		if(not os.path.exists("Data\\")):
+			os.mkdir("Data")
+		
 		if("RawImages" not in os.listdir()):
+			self.top = OptionPanel(self)
 			self.top.wait_window()
 			raw_imgfold = self.top.getFolder()
 		else:
@@ -32,22 +37,20 @@ class MainWindow(Tk):
 		if(raw_imgfold is None):
 			raise ValueError("Raw image folder not found")
 		self.lift()
-		# CREATE FOLDERS IF NOT DONE YET
-		path = "Data\\"
-		if(not os.path.exists("Data\\")):
-			os.mkdir("Data")
-		paths=[path+fold for fold in os.listdir(path)]
 
+		upframe = Frame(self)
+		self.picframe= PicFrame(upframe,os.path.join(raw_imgfold,""))
+		yo = Button(upframe,text="Options",command=self.openOption)
+
+		paths=[path+fold for fold in os.listdir(path)]
 		for path in paths:
 			if(not os.path.exists(path)):
 				os.mkdir(path)
 
-		upframe = Frame(self)
-		self.picframe= PicFrame(upframe,os.path.join(raw_imgfold,""))
+		
 		self.downframe = MultiButFrame(self,self.picframe)
 
 
-		yo = Button(upframe,text="Options",command=self.openOption)
 		yo.pack(side=TOP,fill=BOTH,expand=1)
 		self.picframe.pack(side=TOP, fill=X)
 		upframe.pack(side=TOP,fill=X,expand=1)
@@ -65,6 +68,7 @@ class MainWindow(Tk):
 	def openOption(self):
 		self.top=OptionPanel(self)
 		self.top.wait_window()
+
 		raw_imgfold=self.top.getFolder()
 		if(raw_imgfold is None):
 			raise ValueError("Raw image folder not found")
@@ -75,7 +79,7 @@ class MainWindow(Tk):
 		for path in paths:
 			if(not os.path.exists(path)):
 				os.mkdir(path)
-		self.downframe.destroy()
-		self.downframe=MultiButFrame(self,self.picframe)
+		self.downframe.destroyButtons()
+		self.downframe.createButtons()
 
 		self.downframe.pack(side=BOTTOM,fill=BOTH,expand=True)

@@ -44,6 +44,8 @@ class OptionPanel(Toplevel):
 		self.delButton = Button(self.buttonFrame, command=self.delAll, text="Delete classes",width=-5,
 			background="red",activebackground="red",font=("Consolas",8,"bold"))
 
+		# Bind enter for entry
+		self.entry.bind("<Return>",lambda e: self.submit())
 		# Pack everything
 		self.questlabel.pack(side=TOP)
 		self.entry.pack(side=TOP, padx=2, pady=2)
@@ -67,6 +69,9 @@ class OptionPanel(Toplevel):
 		self.kenobi = False
 		self.unbind("<Button-1>")
 
+	def onEnter(self,event):
+		print("SELECT PRESENT : {}".format(self.entry.select_present()))
+
 	def submit(self):
 		""" Submit the raw-image folder """
 		foldername=self.entrytext.get()
@@ -80,6 +85,9 @@ class OptionPanel(Toplevel):
 
 			self.questext.set("Add a class folder ?")
 			self.execButton.configure(text="Add Class",command=self.createClass)
+			self.entry.bind("<Return>",lambda e: self.createClass())
+			self.entrytext.set("")
+
 
 	def createClass(self):
 		""" Create class folder using name given"""
@@ -92,7 +100,18 @@ class OptionPanel(Toplevel):
 				bg="lawn green"
 			self.confirmColor=not self.confirmColor
 			self.execLabel.configure(foreground="black",background=bg,font=("Unispace",10,"bold"))
-			self.execMessage.set("Class Added !")
+			self.execMessage.set("Class {} Added !".format(classname))
+			self.entrytext.set("")
+		else:
+			if(self.confirmColor):
+				bg="green"
+			else:
+				bg="lawn green"
+			self.confirmColor=not self.confirmColor
+			self.execLabel.configure(foreground="black",background=bg,font=("Unispace",10,"bold"))
+			self.execMessage.set("Class {} Already Exists !".format(classname))
+			self.entrytext.set("")
+
 
 	def delAll(self):
 		""" Delete all class folders and files"""
