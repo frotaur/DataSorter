@@ -15,6 +15,7 @@ class OptionPanel(Toplevel):
 		self.kenobi = True
 		self.msgtimer = 0
 		self.confirmColor= False
+		self.reset = False
 		self.bind('<Button-1>', self.onClick)
 		self.msglist = ["Hello there !", "General Kenobi...", "You are a bold one","Kill him!",
 		"Back away !", "I will deal with this", "Jedi slime myself","Your move","You fool!",
@@ -68,6 +69,7 @@ class OptionPanel(Toplevel):
 		""" If there is a click, deactivate Kenobi easter-egg"""
 		self.kenobi = False
 		self.unbind("<Button-1>")
+
 
 	def onEnter(self,event):
 		print("SELECT PRESENT : {}".format(self.entry.select_present()))
@@ -124,13 +126,21 @@ class OptionPanel(Toplevel):
 				self.execMessage.set("Class folder already empty")
 			else:
 				for classfold in os.listdir("Data//"):
+					# First put all data files in rawImages
+					for file in os.listdir(os.path.join("Data//",classfold)):
+						shutil.move(os.path.join("Data",classfold,file),self.getFolder())
 					shutil.rmtree(os.path.join("Data//"+classfold))
-					self.execLabel.configure(foreground="black",background="orange",font=("Unispace",10,"bold"))
-					self.execMessage.set("Deleted all class folders!")
+					self.reset=True
+
+				self.execLabel.configure(foreground="black",background="orange",font=("Unispace",10,"bold"))
+				self.execMessage.set("Deleted all class folders!")
 
 	def getFolder(self):
 		return self.imgfolder
 
+	def isReset(self):
+		return self.reset
+		
 	def revertMessage(self):
 		if(self.kenobi):
 			self.msgtimer+=1
@@ -144,9 +154,9 @@ class WarningPanel(Toplevel):
 		Toplevel.__init__(self,fenetre,**kwargs)
 		self.attributes("-topmost","true")
 		self.warningText = StringVar()
-		self.warningText.set("Are you sure ?:")
+		self.warningText.set("ALL DATA WILL BE DELETED :")
 
-		width=150
+		width=220
 		height=50
 
 		self.geometry("{}x{}".format(width,height))

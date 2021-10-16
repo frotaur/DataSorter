@@ -21,13 +21,15 @@ class MultiButFrame(Frame):
 		self.buttons=[]
 
 		self.createButtons()
+		super().bind("1",lambda e: print("caca"))
+
 
 	def buttonfunc(self,targetfolder):
 		self.moves.append((self.picframe.currentImgPath(),targetfolder))
 		if len(self.moves)>20:
 			self.moves.pop(0)
 		print("t-folder : ",targetfolder)
-		shutil.copy(self.picframe.currentImgPath(),targetfolder)
+		shutil.move(self.picframe.currentImgPath(), targetfolder)
 		self.picframe.next_image()
 
 	def destroyButtons(self):
@@ -40,6 +42,12 @@ class MultiButFrame(Frame):
 		self.buttons=[]
 		self.rows=[]
 		self.moves=[]
+
+	def keyReleased(self,event):
+		print("NYAK")
+		if(event.char.isnumeric()):
+			if(int(event.char)<len(self.buttons)):
+				self.buttons[int(event.char)].invoke()
 
 	def createButtons(self):
 		datapath = "Data\\"
@@ -57,7 +65,7 @@ class MultiButFrame(Frame):
 			if(i % 4==0):
 				rownbr+=1
 			print("Classname is :{}".format(name))
-			self.buttons.append(Button(self.rows[rownbr], command=lambda i=(os.path.join(datapath,name)): self.buttonfunc(i),text=name,
+			self.buttons.append(Button(self.rows[rownbr], command=lambda a=(os.path.join(datapath,name)): self.buttonfunc(a),text=name,
 				font=("Unispace", 12, "bold"),activebackground="sky blue",bg="blue",foreground="sky blue",width=-15))
 
 		self.rows.append(Frame(self))
@@ -71,6 +79,9 @@ class MultiButFrame(Frame):
 		
 	def undo(self):
 		if(len(self.moves)>0):
+			shutil.move(os.path.join(self.moves[-1][1],os.path.basename(self.moves[-1][0])), self.picframe.imgpath)
 			self.picframe.previous_image()
-			os.remove(os.path.join(self.moves[-1][1],os.path.basename(self.moves[-1][0])))
 			self.moves.pop(-1)
+
+def fun(event):
+	print("fagfagfag")

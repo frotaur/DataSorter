@@ -40,7 +40,8 @@ class MainWindow(Tk):
 
 		upframe = Frame(self)
 		self.picframe= PicFrame(upframe,os.path.join(raw_imgfold,""))
-		yo = Button(upframe,text="Options",command=self.openOption)
+		yo = Button(upframe,text="Options",command=self.openOption,font=("Unispace", 12, "bold"),
+			activebackground="sky blue",bg="blue",foreground="sky blue",width=-15)
 
 		paths=[path+fold for fold in os.listdir(path)]
 		for path in paths:
@@ -56,6 +57,8 @@ class MainWindow(Tk):
 		upframe.pack(side=TOP,fill=X,expand=1)
 		self.downframe.pack(side=BOTTOM,fill=BOTH,expand=True)
 
+		self.bind("<KeyRelease>",self.downframe.keyReleased)
+
 	def changeimg(self):
 		self.picframe.next_image()
 
@@ -70,6 +73,8 @@ class MainWindow(Tk):
 		self.top.wait_window()
 
 		raw_imgfold=self.top.getFolder()
+		resetimg = self.top.isReset()
+
 		if(raw_imgfold is None):
 			raise ValueError("Raw image folder not found")
 		self.lift()
@@ -83,3 +88,6 @@ class MainWindow(Tk):
 		self.downframe.createButtons()
 
 		self.downframe.pack(side=BOTTOM,fill=BOTH,expand=True)
+
+		if(resetimg):
+			self.picframe.reset_image()

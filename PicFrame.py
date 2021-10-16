@@ -1,6 +1,7 @@
 from tkinter import *
 from PIL import ImageTk,Image
 import os
+import random
 
 
 class PicFrame(Frame):
@@ -11,6 +12,7 @@ class PicFrame(Frame):
 		self.imgpath=imgpath
 		self.canvas=Canvas(self,width=self.CANVWIDTH,height=self.CANVHEIGHT)
 		self.allimg=[path for path in os.listdir(imgpath)]
+		# random.shuffle(self.allimg)
 		self.imgnumber=0
 		self.img=None
 		self.canvas.pack()
@@ -25,6 +27,12 @@ class PicFrame(Frame):
 
 	def previous_image(self):
 		self.imgnumber = (self.imgnumber-1) % len(self.allimg)
+		self.showImg()
+
+	def reset_image(self):
+		self.allimg=[path for path in os.listdir(self.imgpath)]
+		# random.shuffle(self.allimg)
+		self.imgnumber=0
 		self.showImg()
 
 	def showImg(self):
