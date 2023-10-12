@@ -44,7 +44,6 @@ class MultiButFrame(Frame):
         self.moves=[]
 
     def keyReleased(self,event):
-        print("NYAK")
         if(event.char.isnumeric()):
             if(int(event.char)<len(self.buttons)):
                 self.buttons[int(event.char)].invoke()
