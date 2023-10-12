@@ -5,7 +5,10 @@ import shutil
 
 
 class OptionPanel(Toplevel):
-
+    """
+        Panel that opens when no raw-image folder is found
+        Asks user to enter the name of the folder
+    """
     def __init__(self, fenetre, **kwargs):
         Toplevel.__init__(self, fenetre, **kwargs)
 
@@ -29,7 +32,7 @@ class OptionPanel(Toplevel):
         # Define widgets
         self.buttonFrame=Frame(self)
         self.questext = StringVar()
-        self.questext.set("Name of raw-image folder ?:")
+        self.questext.set("Name of raw-data folder ?:")
         
         self.questlabel = Label(self, textvariable=self.questext)
 
@@ -47,6 +50,7 @@ class OptionPanel(Toplevel):
 
         # Bind enter for entry
         self.entry.bind("<Return>",lambda e: self.submit())
+
         # Pack everything
         self.questlabel.pack(side=TOP)
         self.entry.pack(side=TOP, padx=2, pady=2)
@@ -56,10 +60,10 @@ class OptionPanel(Toplevel):
         self.execLabel.pack(fill=X,expand=1)
 
         # Fast-forward in case folder here
-        if("RawImages" in os.listdir()):
-            self.entrytext.set("RawImages")
+        if("RawData" in os.listdir()):
+            self.entrytext.set("RawData")
             self.submit()
-            self.execMessage.set("Raw image folder found !")
+            self.execMessage.set("Raw data folder found !")
             self.entrytext.set("Class name")
 
         # Launch kenobi sequence after 5 seconds
@@ -149,12 +153,11 @@ class OptionPanel(Toplevel):
             self.after(5000,self.revertMessage)
 
 class WarningPanel(Toplevel):
-
-    def __init__(self,fenetre,**kwargs):
+    def __init__(self,fenetre,message="Are you sure?",**kwargs):
         Toplevel.__init__(self,fenetre,**kwargs)
         self.attributes("-topmost","true")
         self.warningText = StringVar()
-        self.warningText.set("ALL DATA WILL BE DELETED :")
+        self.warningText.set(message)
 
         width=220
         height=50
@@ -168,6 +171,7 @@ class WarningPanel(Toplevel):
         self.warninglabel = Label(self, textvariable=self.warningText,font=("Unispace",10,"bold"),fg="Red")
         self.cancelBut = Button(self.butFrame, command=self.cancel, text="Cancel",width=-5,
             font=("Consolas",8,"bold"))
+        
         self.oksure = Button(self.butFrame, command=self.ok, text="Yes sure",width=-5,
             background="red",activebackground="red",font=("Consolas",8,"bold"))
 

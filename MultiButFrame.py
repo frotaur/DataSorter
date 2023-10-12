@@ -2,7 +2,7 @@ from tkinter import *
 
 import os
 import shutil
-
+from ViewFrame import ViewFrame
 
 class MultiButFrame(Frame):
     """
@@ -10,11 +10,11 @@ class MultiButFrame(Frame):
         by the number of folders in Data/
     """
 
-    def __init__(self, fenetre, picframe,**kwargs):
+    def __init__(self, fenetre, ViewFrame : ViewFrame,**kwargs):
         Frame.__init__(self,fenetre,**kwargs)
         
 
-        self.picframe=picframe
+        self.ViewFrame=ViewFrame
         
         self.moves =[]
         self.rows=[]
@@ -25,12 +25,12 @@ class MultiButFrame(Frame):
 
 
     def buttonfunc(self,targetfolder):
-        self.moves.append((self.picframe.currentImgPath(),targetfolder))
+        self.moves.append((self.ViewFrame.currentPath(),targetfolder))
         if len(self.moves)>20:
             self.moves.pop(0)
         print("t-folder : ",targetfolder)
-        shutil.move(self.picframe.currentImgPath(), targetfolder)
-        self.picframe.next_image()
+        shutil.move(self.ViewFrame.currentPath(), targetfolder)
+        self.ViewFrame.next_data()
 
     def destroyButtons(self):
         for but in self.buttons:
@@ -50,8 +50,8 @@ class MultiButFrame(Frame):
                 self.buttons[int(event.char)].invoke()
 
     def createButtons(self):
-        datapath = "Data\\"
-        classnames = [i for i in os.listdir(datapath) if os.path.isdir(datapath+i)]
+        datapath = "Data"
+        classnames = [i for i in os.listdir(datapath) if os.path.isdir(os.path.join(datapath,i))]
         nbclass = len(classnames)
         nbrows = nbclass//4+1
         
@@ -79,6 +79,6 @@ class MultiButFrame(Frame):
         
     def undo(self):
         if(len(self.moves)>0):
-            shutil.move(os.path.join(self.moves[-1][1],os.path.basename(self.moves[-1][0])), self.picframe.imgpath)
-            self.picframe.previous_image()
+            shutil.move(os.path.join(self.moves[-1][1],os.path.basename(self.moves[-1][0])), self.ViewFrame.datapath)
+            self.ViewFrame.previous_data()
             self.moves.pop(-1)
