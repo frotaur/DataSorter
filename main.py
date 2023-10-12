@@ -2,10 +2,10 @@ from MainWindow import MainWindow
 
 
 def main():
-	fenetre = MainWindow()
+    fenetre = MainWindow()
 
-	fenetre.mainloop()
+    fenetre.mainloop()
 
 
 if __name__ == "__main__":
-	main()
+    main()
