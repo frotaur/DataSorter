@@ -26,3 +26,9 @@ In python,to read the data :
 And data will be an array of dicts as described.
 
 Let me know if any bugs arise (which they will).
+
+## NOTE :
+On mac, there may be an error saying that '_tkinter' is missing or something. Python must be compiled with tkinter, and on Mac you should run :
+` brew install python-tk@3.10`
+
+Replace with the correct version of python.
