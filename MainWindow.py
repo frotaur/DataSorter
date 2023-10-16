@@ -1,9 +1,9 @@
 from tkinter import *
 
 
-from MultiButFrame import MultiButFrame
+from ButFrame import BestButFrame
 from ViewFrame import ViewFrame
-from OptionPanel import OptionPanel
+from OptionPanel import OptionPanel, ResetOptionPanel
 import tkinter.font as tkfont
 import os
 
@@ -19,32 +19,44 @@ class MainWindow(Tk):
         # width=(m_len+2*1)*15*4
         width=960
         height=820
-        self.geometry(str(width)+"x"+str(height))
+
+        # Get the screen width and height
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+
+        # Calculate the x and y coordinates to center the window
+        x = (screen_width - width) // 2
+        y = (screen_height - height) // 2
+
+        # Set the position of the window
+        self.geometry(f'{width}x{height}+{x}+{y}')
+
         os.chdir(os.path.dirname(__file__))  # Change to working directory
 
         # CREATE FOLDERS IF NOT DONE YET
         path = "Data"
         os.makedirs(path,exist_ok=True)
-        
+        self.raw_imgfold = None
+
         # Check if "RawData" folder exists, otherwise prompt user with OptionPanel
         if("RawData" not in os.listdir()):
-            self.top = OptionPanel(self)
+            self.top = ResetOptionPanel(self)
             self.top.wait_window()
-            raw_imgfold = self.top.getFolder()
+            self.raw_imgfold = self.top.getFolder()
         else:
-            raw_imgfold="RawData"
+            self.raw_imgfold="RawData"
 
-        if(raw_imgfold is None):
+        if(self.raw_imgfold is None):
             raise ValueError("Raw data folder not found")
         self.lift()
 
         # Get data type :
-        self.datatype = self.get_datatype(raw_imgfold)
-
+        self.datatype = self.get_datatype(self.raw_imgfold)
+        assert self.datatype == "vid" # Limit ourselves to videos for now
         # Create an upper frame and a button in the frame
         upframe = Frame(self)
 
-        self.picframe= ViewFrame(upframe,raw_imgfold,self.datatype)
+        self.picframe= ViewFrame(upframe,self.raw_imgfold,self.datatype)
 
         options_button = Button(upframe,text="Options",command=self.openOption,font=("Unispace", 12, "bold"),
             activebackground="sky blue",bg="blue",foreground="sky blue",width=-15)
@@ -55,7 +67,7 @@ class MainWindow(Tk):
         #     os.makedirs(path,exist_ok=True)
 
         
-        self.downframe = MultiButFrame(self,self.picframe)
+        self.downframe = BestButFrame(self,self.picframe)
 
 
         options_button.pack(side=TOP,fill=BOTH,expand=1)
@@ -68,8 +80,8 @@ class MainWindow(Tk):
     def changeimg(self):
         self.picframe.next_data()
 
-    def getimgpath(self):
-        return self.picframe.current_data()
+    # def getimgpath(self):
+    #     return self.picframe.current_data()
 
     def mainloop(self):
         Tk.mainloop(self)
@@ -88,13 +100,13 @@ class MainWindow(Tk):
             raise ValueError(f"Un-supported data type : {file.split('.')[-1]}")
 
     def openOption(self):
-        self.top=OptionPanel(self)
+        self.top=ResetOptionPanel(self,raw_img_folder=self.raw_imgfold)
         self.top.wait_window()
 
-        raw_imgfold=self.top.getFolder()
+        self.raw_imgfold=self.top.getFolder()
         resetimg = self.top.isReset()
 
-        if(raw_imgfold is None):
+        if(not os.path.exists(self.raw_imgfold)):
             raise ValueError("Raw image folder not found")
         self.lift()
         path="Data"
@@ -109,4 +121,5 @@ class MainWindow(Tk):
         self.downframe.pack(side=BOTTOM,fill=BOTH,expand=True)
 
         if(resetimg):
-            self.picframe.reset_image()
+            self.picframe.reset_data()
+            self.downframe.reset_data()

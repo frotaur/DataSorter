@@ -4,6 +4,21 @@ import os
 import shutil
 
 
+def center_geometry(fenetre,w,h):
+    # Get the width and height of the parent window
+    fenetre_width = fenetre.winfo_width()
+    fenetre_height = fenetre.winfo_height()
+
+    # Get the position of the fenetre window on the screen
+    fenetre_x = fenetre.winfo_rootx()
+    fenetre_y = fenetre.winfo_rooty()
+
+    # Calculate the x and y coordinates to center the popup window
+    x = fenetre_x + (fenetre_width - w) // 2
+    y = fenetre_y + (fenetre_height - h) // 2
+
+    return f'{w}x{h}+{x}+{y}'
+
 class OptionPanel(Toplevel):
     """
         Panel that opens when no raw-image folder is found
@@ -162,7 +177,9 @@ class WarningPanel(Toplevel):
         width=220
         height=50
 
-        self.geometry("{}x{}".format(width,height))
+        # Set the position of the popup window
+        self.geometry(center_geometry(fenetre,width,height))
+
         self.minsize(width, height)  # set minimum window size value
         self.maxsize(width, height)  # set maximum window size value
         self.answer = False
@@ -191,3 +208,113 @@ class WarningPanel(Toplevel):
 
     def getAnswer(self):
         return self.answer
+
+
+class ResetOptionPanel(Toplevel):
+    """
+        Panel used to reset the pairs folder, as well as the output file.
+    """
+    def __init__(self, fenetre, raw_img_folder=None, **kwargs):
+        Toplevel.__init__(self, fenetre, **kwargs)
+
+        self.destroy_early = raw_img_folder is None  
+
+        self.attributes("-topmost","true")  # Always on top
+        self.quittime=False
+
+        self.confirmColor= False
+        self.reset = False
+
+        width =300
+        height=100
+
+
+        self.geometry(center_geometry(fenetre,width,height))
+
+
+        # Define widgets
+        self.buttonFrame=Frame(self)
+        self.questext = StringVar()
+        self.questext.set("Name of raw-data folder ?:")
+        
+        self.questlabel = Label(self, textvariable=self.questext)
+
+        self.entrytext=StringVar()
+        self.entrytext.set("Folder name (case sensitive)")
+        self.entry = Entry(self, width=30, textvariable=self.entrytext)
+
+        self.execMessage = StringVar(value="Hello there !")
+        self.execButton = Button(self.buttonFrame, command=self.submit_img_folder, text="Submit",width=-5,
+            font=("Consolas",8,"bold"))
+        self.execLabel= Label(self,textvariable=self.execMessage,font=("Unispace",10,"bold"))
+
+        self.delButton = Button(self.buttonFrame, command=self.delAll, text="Delete ALL",width=-5,
+            background="red",activebackground="red",font=("Consolas",8,"bold"))
+
+        # Bind enter for entry
+        self.entry.bind("<Return>",lambda e: self.submit_img_folder())
+
+        # Pack everything
+        self.questlabel.pack(side=TOP)
+        self.entry.pack(side=TOP, padx=2, pady=2)
+        self.buttonFrame.pack(side=TOP,expand=1,fill=BOTH)
+        self.execButton.pack(side=LEFT,padx=2,fill=X,expand=1)
+        self.delButton.pack(side=LEFT,padx=2,fill=X,expand=1)
+        self.execLabel.pack(fill=X,expand=1)
+
+        self.imgfolder=raw_img_folder
+        if self.imgfolder is None and os.path.exists("RawData"):
+            self.imgfolder="RawData"
+    
+        # Fast-forward in case folder here
+        if(self.imgfolder is not None):
+            # Awful code here, just too lazy to rewrite, so pathcing up
+            self.entrytext.set(self.imgfolder)
+            self.submit_img_folder()
+            self.execMessage.set("Raw data folder found !")
+            self.entry.destroy()
+            self.execButton.destroy()
+
+    def onEnter(self,event):
+        print("SELECT PRESENT : {}".format(self.entry.select_present()))
+
+    def submit_img_folder(self):
+        """ Submit the raw-image folder """
+        foldername=self.entrytext.get()
+        if(foldername not in os.listdir()):
+            self.execLabel.configure(foreground="black",background="red",font=("Unispace",10,"bold"))
+            self.execMessage.set("Non-existing directory")
+        else:
+            self.imgfolder=foldername
+            self.execLabel.configure(foreground="black",background="green",font=("Unispace",10,"bold"))
+            self.execMessage.set("Raw images folder set !")
+
+            self.questext.set("Reset data ?")
+            
+            self.entry.destroy()
+            self.execButton.destroy()
+        
+        if(self.destroy_early):
+            self.destroy()
+
+    def delAll(self):
+        """ Delete all class folders and files"""
+        top = WarningPanel(self)
+        top.wait_window()
+        doDelete = top.getAnswer()
+        if(doDelete):
+            shutil.rmtree("Data")
+            os.makedirs("Data",exist_ok=True)
+            shutil.rmtree("pairs")
+            self.execLabel.configure(foreground="black",background="orange",font=("Unispace",10,"bold"))
+            self.execMessage.set("Deleted all data!")
+            self.reset = True
+
+            self.destroy()
+    
+    
+    def getFolder(self):
+        return self.imgfolder
+
+    def isReset(self):
+        return self.reset
