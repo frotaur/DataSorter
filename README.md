@@ -3,7 +3,7 @@
 ## How to use :
 In a folder, but a list of videos that you want to compare. Naming the folder 'RawData' will speed up the startup of the program, otherwise you will need to specify it at the beginning of the program.
 
-Launch the program. (if necessary, run pip -r requirements.txt to install dependencies).
+Launch the program (`python main.py`). (if necessary, run pip -r requirements.txt to install dependencies).
 
 Follow the prompts (setting the name of the raw image folder if its not detected.). If everything goes according to plan, two videos should be displayed, with buttons underneat 'L is more interesting', 'R is more interesting'. Clicking one of these will categorize the pair and continue to the next one. 
 
