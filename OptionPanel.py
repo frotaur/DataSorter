@@ -5,6 +5,8 @@ import shutil
 
 
 def center_geometry(fenetre,w,h):
+
+    fenetre.update_idletasks()
     # Get the width and height of the parent window
     fenetre_width = fenetre.winfo_width()
     fenetre_height = fenetre.winfo_height()
@@ -14,8 +16,8 @@ def center_geometry(fenetre,w,h):
     fenetre_y = fenetre.winfo_rooty()
 
     # Calculate the x and y coordinates to center the popup window
-    x = fenetre_x + (fenetre_width - w) // 2
-    y = fenetre_y + (fenetre_height - h) // 2
+    x = (fenetre_width - w) // 2 + fenetre_x
+    y = (fenetre_height - h) // 2 + fenetre_y
 
     return f'{w}x{h}+{x}+{y}'
 

@@ -1,7 +1,7 @@
 from tkinter import *
 from PIL import ImageTk,Image
 import os, cv2, json
-import shutil
+import shutil, random
 
 class ViewFrame(Frame):
     """
@@ -35,7 +35,8 @@ class ViewFrame(Frame):
             self.set_done(True)    
         self.pairs = [path for path in os.listdir(self.pairpath)]
 
-        # random.shuffle(self.all_data)
+        random.shuffle(self.pairs)
+
         self.datanumber=0
         self.photo={'right':None,'left':None}
 
@@ -80,6 +81,7 @@ class ViewFrame(Frame):
         self.set_done(False)
 
         self.pairs=[path for path in os.listdir(self.pairpath)]
+        random.shuffle(self.pairs)
         # random.shuffle(self.all_data)
         self.datanumber=0
         print("Before showpair, done is :",self.DONE)

@@ -3,7 +3,7 @@ from tkinter import *
 
 from ButFrame import BestButFrame
 from ViewFrame import ViewFrame
-from OptionPanel import OptionPanel, ResetOptionPanel
+from OptionPanel import OptionPanel, ResetOptionPanel, center_geometry
 import tkinter.font as tkfont
 import os
 
@@ -32,7 +32,7 @@ class MainWindow(Tk):
         self.geometry(f'{width}x{height}+{x}+{y}')
 
         os.chdir(os.path.dirname(__file__))  # Change to working directory
-
+        
         # CREATE FOLDERS IF NOT DONE YET
         path = "Data"
         os.makedirs(path,exist_ok=True)
