@@ -2,6 +2,7 @@ from tkinter import *
 from PIL import ImageTk,Image
 import os, cv2, json
 import shutil
+from tqdm import tqdm
 
 class ViewFrame(Frame):
     """
@@ -58,7 +59,7 @@ class ViewFrame(Frame):
 
         os.makedirs(self.pairpath,exist_ok=True)
         
-        for i in range(len(self.all_data)) :
+        for i in tqdm(range(len(self.all_data))) :
             for j in range(i+1,len(self.all_data)): 
                 with open(os.path.join(self.pairpath,f"pair_{i}_{j}.json"),'w') as f:
                     json.dump({"left":self.all_data[i],"right":self.all_data[j]},f)

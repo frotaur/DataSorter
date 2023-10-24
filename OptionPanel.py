@@ -1,10 +1,11 @@
 from tkinter import *
 
 import os
-import shutil
+import shutil,requests,zipfile,pathlib
 
 
 def center_geometry(fenetre,w,h):
+    fenetre.update_idletasks()
     # Get the width and height of the parent window
     fenetre_width = fenetre.winfo_width()
     fenetre_height = fenetre.winfo_height()
@@ -274,7 +275,7 @@ class ResetOptionPanel(Toplevel):
             self.execMessage.set("Raw data folder found !")
             self.entry.destroy()
             self.execButton.destroy()
-
+        
     def onEnter(self,event):
         print("SELECT PRESENT : {}".format(self.entry.select_present()))
 
@@ -318,3 +319,71 @@ class ResetOptionPanel(Toplevel):
 
     def isReset(self):
         return self.reset
+    
+class DownloadPanel(Toplevel):
+    """
+        Panel used to download data from internet
+    """
+    def __init__(self, fenetre, raw_img_folder, **kwargs):
+        Toplevel.__init__(self, fenetre, **kwargs)
+
+        self.attributes("-topmost","true")  # Always on top
+
+        self.img_folder = raw_img_folder
+
+        width =300
+        height=100
+
+        self.geometry(center_geometry(fenetre,width,height))
+
+
+        # Define widgets
+        self.buttonFrame=Frame(self)
+
+        self.questext = StringVar()
+        self.questext.set("Download data from repository ? (will empty raw data folder and pairs folder):")
+        self.questlabel = Label(self, textvariable=self.questext,    wraplength=280,justify=LEFT )
+
+        self.execButton = Button(self.buttonFrame, command=self.download, text="Download",width=-5,
+            font=("Consolas",8,"bold"))
+
+        # Pack everything
+        self.questlabel.pack(side=TOP)
+        self.buttonFrame.pack(side=TOP,expand=1,fill=BOTH)
+        self.execButton.pack(side=LEFT,padx=2,fill=X,expand=1)
+
+    def download(self):
+        repo_zip_url = 'https://github.com/frotaur/Lenia_Data/archive/refs/heads/main.zip'
+        extract_to = pathlib.Path(__file__).parent.as_posix()
+        zip_path = os.path.join(extract_to,'repo.zip')
+
+        shutil.rmtree(self.img_folder) # Remove existing data
+        if(os.path.exists(os.path.join(extract_to,'pairs'))):
+            shutil.rmtree(os.path.join(extract_to,'pairs'))
+        # # Download repo as zip
+        response = requests.get(repo_zip_url, stream=True)
+        response.raise_for_status()
+        with open(zip_path, 'wb') as file:
+            for chunk in response.iter_content(chunk_size=8192):
+                file.write(chunk)
+
+        # # Extract zip
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(extract_to)
+
+        # # Get the path to the main folder inside the extracted files
+        main_folder_path = os.path.join(extract_to, 'Lenia_Data-main')
+
+        # # Specify the folder to keep
+        keep_folder_path = os.path.join(main_folder_path, 'RawData')
+
+        shutil.move(keep_folder_path,extract_to)
+        # # Delete all other files and folders
+        shutil.rmtree(main_folder_path)
+
+        # Remove the downloaded zip file
+        os.unlink(zip_path)
+
+        self.questext.set("Downloaded data from repository !\n Making pairs... Please wait")
+        # Sleep 1 second before auto-destroying
+        self.after(1000,self.destroy)

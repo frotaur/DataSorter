@@ -3,7 +3,7 @@ from tkinter import *
 
 from ButFrame import BestButFrame
 from ViewFrame import ViewFrame
-from OptionPanel import OptionPanel, ResetOptionPanel
+from OptionPanel import OptionPanel, ResetOptionPanel, DownloadPanel
 import tkinter.font as tkfont
 import os
 
@@ -38,16 +38,14 @@ class MainWindow(Tk):
         os.makedirs(path,exist_ok=True)
         self.raw_imgfold = None
 
-        # Check if "RawData" folder exists, otherwise prompt user with OptionPanel
-        if("RawData" not in os.listdir()):
-            self.top = ResetOptionPanel(self)
-            self.top.wait_window()
-            self.raw_imgfold = self.top.getFolder()
-        else:
-            self.raw_imgfold="RawData"
+        # Check if "RawData" folder exists, (removed prompt for datafolder)
+        os.makedirs("RawData",exist_ok=True)
+        self.raw_imgfold = "RawData"
 
-        if(self.raw_imgfold is None):
-            raise ValueError("Raw data folder not found")
+        
+        if(len(os.listdir(self.raw_imgfold))==0):
+            self.top=DownloadPanel(self,raw_img_folder=self.raw_imgfold)
+            self.top.wait_window()
         self.lift()
 
         # Get data type :
