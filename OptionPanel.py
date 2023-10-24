@@ -360,6 +360,7 @@ class DownloadPanel(Toplevel):
         shutil.rmtree(self.img_folder) # Remove existing data
         if(os.path.exists(os.path.join(extract_to,'pairs'))):
             shutil.rmtree(os.path.join(extract_to,'pairs'))
+        self.questext.set("Downloading data from repository... Please wait")
         # # Download repo as zip
         response = requests.get(repo_zip_url, stream=True)
         response.raise_for_status()
