@@ -9,9 +9,10 @@ Ensure there is no RawData folder in the root directory, or at least that it is 
 Launch the program (`python main.py`). (if necessary, run pip -r requirements.txt to install dependencies).
 
 If you are prompted to download, click download to initiate. The program will seem to freeze, but everything is going according to plan. After downloading the videos, the program will prepare the pairs to compare. <span style="color:red">WARNING : right now I make one file per pair. So, the program will generate ALOT of files (~200k if 600 RawData). These are tiny files, but sometimes opening the folder slows down the computer. This will be solve in a further update, but for now limit the size of RawData to 1000.</span>
-Follow the prompts (setting the name of the raw image folder if its not detected.). If everything goes according to plan, two videos should be displayed, with buttons underneat 'L is more interesting', 'R is more interesting'. Clicking one of these will categorize the pair and continue to the next one. 
 
-NOTE : you can also use the left and right arrow-keys to choose which is more interesting, which is more ergonomic, I think.
+If everything goes according to plan, two videos should be displayed, with buttons underneat 'L is more interesting', 'R is more interesting'. Clicking one of these will categorize the pair and continue to the next one. 
+
+<span style="color:blue">NOTE : you can also use the left and right arrow-keys to choose which is more interesting, which is more ergonomic, I think.</span>
 
 You can UNDO your last choice either by pressing backspace, or clicking the undo button. You can UNDO several choices, up to 100, BUT they must have been made in the current session (in other words, if you closed the program and resumed, it won't work).
 
