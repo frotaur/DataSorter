@@ -15,8 +15,8 @@ def center_geometry(fenetre,w,h):
     fenetre_y = fenetre.winfo_rooty()
 
     # Calculate the x and y coordinates to center the popup window
-    x = fenetre_x + (fenetre_width - w) // 2
-    y = fenetre_y + (fenetre_height - h) // 2
+    x = (fenetre_width - w) // 2 + fenetre_x
+    y = (fenetre_height - h) // 2 + fenetre_y
 
     return f'{w}x{h}+{x}+{y}'
 

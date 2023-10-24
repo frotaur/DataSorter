@@ -1,10 +1,14 @@
 # DataSorter for Human feedback
 
 ## How to use :
-In a folder, but a list of videos that you want to compare. Naming the folder 'RawData' will speed up the startup of the program, otherwise you will need to specify it at the beginning of the program.
+#### If you don't want to download data : 
+In a folder, put a list of videos that you want to compare. Name the folder 'RawData' otherwise you will be prompted to download
+#### If you don't have data locally :
+Ensure there is no RawData folder in the root directory, or at least that it is empty. Launching the program will prompt for download.
 
 Launch the program (`python main.py`). (if necessary, run pip -r requirements.txt to install dependencies).
 
+If you are prompted to download, click download to initiate. The program will seem to freeze, but everything is going according to plan. After downloading the videos, the program will prepare the pairs to compare. <span style="color:red">WARNING : right now I make one file per pair. So, the program will generate ALOT of files (~200k if 600 RawData). These are tiny files, but sometimes opening the folder slows down the computer. This will be solve in a further update, but for now limit the size of RawData to 1000.</span>
 Follow the prompts (setting the name of the raw image folder if its not detected.). If everything goes according to plan, two videos should be displayed, with buttons underneat 'L is more interesting', 'R is more interesting'. Clicking one of these will categorize the pair and continue to the next one. 
 
 NOTE : you can also use the left and right arrow-keys to choose which is more interesting, which is more ergonomic, I think.
