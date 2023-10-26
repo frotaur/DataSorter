@@ -35,19 +35,17 @@ class BestButFrame(Frame):
         
 
     def buttonfunc(self,side):
-        curPair, curPairDict = self.ViewFrame.currentPair(),self.ViewFrame.currentPairDict()
+        curPair= self.ViewFrame.currentPair() # 'left' 'right' dictionary with video names.
         
-        if(curPair is not None and curPairDict is not None):
-            curPairPure = {k:os.path.splitext(v)[0] for k,v in curPairDict.items()}
-            self.moves.append((curPair,curPairDict))
+        if(curPair is not None):
+            self.moves.append(curPair)
             if len(self.moves)>200:
                 self.moves.pop(0)
-            self.data_so_far.append({**curPairPure,"side":side})
-            # shutil.move(self.ViewFrame.currentPair(), targetfolder)
+            self.data_so_far.append({**curPair,"side":side})
+
             with open(self.outputfile,'w') as f:
                 json.dump(self.data_so_far,f)
 
-            os.remove(self.ViewFrame.currentPair())
             self.ViewFrame.next_data()
 
     def destroyButtons(self):
@@ -97,9 +95,9 @@ class BestButFrame(Frame):
     def undo(self):
         if(len(self.moves)>0):
             print(f"undoing {self.moves[-1]}")
-            with open(self.moves[-1][0],'w') as f:
-                json.dump(self.moves[-1][1],f)
-            self.ViewFrame.previous_data()
+
+            self.ViewFrame.previous_data(self.moves[-1])
+
             self.moves.pop(-1)
             self.data_so_far.pop(-1)
             with open(self.outputfile,'w') as f:
