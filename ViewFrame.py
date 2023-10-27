@@ -4,6 +4,7 @@ import os, cv2, json
 import shutil, random
 from tqdm import tqdm
 import pandas as pd
+from tkinter import ttk
 
 
 class ViewFrame(Frame):
@@ -15,7 +16,7 @@ class ViewFrame(Frame):
         self.WIDTH = 960
 
         self.CANVWIDTH = self.WIDTH//2
-        self.CANVHEIGHT = 520
+        self.CANVHEIGHT = 520-20
         self.datapath=rawdatapath
         self.pairpath=os.path.join(datapath,"pairs","pairs.csv")
 
@@ -49,9 +50,33 @@ class ViewFrame(Frame):
         self.datanumber=0
         self.photo={'right':None,'left':None}
 
-        self.error_msg.pack(side=BOTTOM)
+
+        style = ttk.Style(self)
+        style.theme_use('winnative')
+        # Define the properties of the style
+        style.configure("youtube.Horizontal.TProgressbar",
+                        thickness=10,  # Height of the progress bar
+                        troughcolor="lightgray",  # Background color
+                        background="red",  # Foreground color (color of the progress)
+                        borderwidth=0,  # Remove the border
+                        relief="flat"  # Ensure the progress bar is flat
+                        )
+        
+        # Adjust the layout
+        style.layout("youtube.Horizontal.TProgressbar", 
+             [('Horizontal.Progressbar.trough',
+               {'children': [('Horizontal.Progressbar.pbar',
+                              {'side': 'left', 'sticky': 'nswe', 'expand': True})],
+                'sticky': 'nswe'})])
+        # red progress bar for video progress
+        self.video_progress = ttk.Progressbar(self, orient = HORIZONTAL, length = 2*self.CANVWIDTH-5, mode = 'determinate',style="youtube.Horizontal.TProgressbar")
+        # self.video_progress = Button(self,text="Restart",command=self.restart_video,font=("Unispace", 12, "bold"))
+        self.video_progress['value']=0
+        # self.error_msg.pack(side=BOTTOM)
+        self.video_progress.pack(side=BOTTOM)
         self.canvas['left'].pack(side=LEFT, padx=5)
         self.canvas['right'].pack(side=RIGHT, padx=5)
+        
 
         self.update_cur_pair()
         self.showPair()
@@ -99,6 +124,16 @@ class ViewFrame(Frame):
             self.cur_pair = pair_dict
             self.showPair()
     
+    def restart_video(self):
+        """
+            Restarts the video
+        """
+        if not self.DONE:
+            for pos in ['right','left']:
+                if(self.vid[pos] is not None):
+                    self.vid[pos].set(cv2.CAP_PROP_POS_FRAMES, 0)
+                    self.video_progress['value'] = 0
+
     def update_cur_pair(self):
         """
             Gets current pair according to datanumber
@@ -149,10 +184,11 @@ class ViewFrame(Frame):
                 self.canvas[direc].delete("all")
                 self.stopVid(direc)
             self.error_text.set("No more data to label (pairs folder is empty). To restart -> Options -> Delete all data")
-
+            self.error_msg.pack(side=BOTTOM)
         else:
             self.DONE=value
             self.error_text.set("")
+            self.error_msg.pack_forget()
     
     def stopVid(self,position='left'):
         if(self.vid[position] is not None and self.vid[position].isOpened()):
@@ -174,18 +210,22 @@ class ViewFrame(Frame):
         ratio = min(self.CANVWIDTH/width,self.CANVHEIGHT/height)
 
         re_size  = (int(ratio*width),int(ratio*height))
-        self.update(re_size,position)
+        self.update_vid(re_size,position)
     
-    def update(self,size,position):
+    def update_vid(self,size,position):
         ret, frame = self.vid[position].read()
         if ret:
             frame = cv2.resize(frame, size)
             self.photo[position] = ImageTk.PhotoImage(image=Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)))
             self.canvas[position].create_image(self.CANVWIDTH/2,self.CANVHEIGHT/2,anchor=CENTER,image=self.photo[position])
+            if(position=='right'): # Hacky but to update just once every double update
+                self.video_progress['value'] = self.vid['right'].get(cv2.CAP_PROP_POS_FRAMES)/self.vid['right'].get(cv2.CAP_PROP_FRAME_COUNT)*100
+                self.update()
         else:
             # Reset the video to the beginning
             self.vid[position].set(cv2.CAP_PROP_POS_FRAMES, 0)
-        self._after_id[position] = self.fenetre.after(20, lambda : self.update(size,position))  # ref  resh every 10ms
+            self.video_progress['value'] = 0
+        self._after_id[position] = self.fenetre.after(20, lambda : self.update_vid(size,position))  # ref  resh every 10ms
         
 
     def __del__(self):

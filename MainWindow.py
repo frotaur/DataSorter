@@ -74,7 +74,7 @@ class MainWindow(Tk):
 
 
         options_button.pack(side=TOP,fill=BOTH,expand=1)
-        self.picframe.pack(side=TOP, fill=X)
+        self.picframe.pack(side=TOP, fill=BOTH)
         upframe.pack(side=TOP,fill=X,expand=1)
         self.downframe.pack(side=BOTTOM,fill=BOTH,expand=True)
 

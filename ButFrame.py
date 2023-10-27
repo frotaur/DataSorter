@@ -68,27 +68,35 @@ class BestButFrame(Frame):
             self.buttonfunc(1)
         elif(event.keysym=="BackSpace"):
             self.undo()
+        elif(event.keysym=="space"):
+            self.restart_video()
 
+    def restart_video(self):
+        self.ViewFrame.restart_video()
+    
     def createButtons(self):
-        nbrows = 3
+        nbrows = 4
         
         for i in range(nbrows):
             self.rows.append(Frame(self))
 
-
+        self.buttons.append(Button(self.rows[0], command=self.restart_video, 
+                                   text="REPLAY FROM START", font=("Unispace", 12, "bold"),
+                                   activebackground="gray",bg="dark gray",
+                                   foreground="sky blue",width=-15))
         
         for i,name in enumerate(['L More Interesting','R More Interesting']):
             print("Classname is :{}".format(name))
-            self.buttons.append(Button(self.rows[0], command=lambda j=i: self.buttonfunc(j),text=name,
+            self.buttons.append(Button(self.rows[1], command=lambda j=i: self.buttonfunc(j),text=name,
                 font=("Unispace", 12, "bold"),activebackground="sky blue",bg="blue",foreground="sky blue",width=-15))
 
         self.rows.append(Frame(self))
-        self.buttons.append(Button(self.rows[1],command=self.undo,text="UNDO",font=("Unispace", 12, "bold"),
+        self.buttons.append(Button(self.rows[2],command=self.undo,text="UNDO",font=("Unispace", 12, "bold"),
             activebackground="red",bg="light coral",foreground="navy",width=-15))
-        self.buttons.append(Button(self.rows[2],command=self.upload_data,text="EXPORT RESULTS",font=("Unispace", 12, "bold"),
+        self.buttons.append(Button(self.rows[3],command=self.upload_data,text="EXPORT RESULTS",font=("Unispace", 12, "bold"),
                                    activebackground="green", bg="light green", foreground="green", width=-15))
         for but in self.buttons:
-            but.pack(side=LEFT,fill=X,padx=1,expand=1)
+            but.pack(side=LEFT,fill=X,padx=5,expand=1,pady=5)
         for row in self.rows:
             row.pack(side=TOP,fill=BOTH)
     

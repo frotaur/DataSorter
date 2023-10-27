@@ -3,7 +3,7 @@ from tkinter import *
 import os
 import shutil,requests,zipfile,pathlib, math
 from tqdm import tqdm
-
+from tkinter import ttk
 
 def center_geometry(fenetre,w,h):
     fenetre.update_idletasks()
@@ -201,21 +201,24 @@ class DownloadPanel(Toplevel):
         self.buttonFrame=Frame(self)
 
         self.questext = StringVar()
-        self.questext.set("Download data from repository ? (will empty raw data folder and pairs folder):")
+        self.questext.set("Download data ? (~1GB)")
         self.questlabel = Label(self, textvariable=self.questext,    wraplength=280,justify=LEFT )
 
         self.execButton = Button(self.buttonFrame, command=self.download, text="Download",width=-5,
             font=("Consolas",8,"bold"))
 
+        self.loading_bar = ttk.Progressbar(self, orient="horizontal", length=150, mode="determinate")
         # Pack everything
         self.questlabel.pack(side=TOP)
         self.buttonFrame.pack(side=TOP,expand=1,fill=BOTH)
         self.execButton.pack(side=LEFT,padx=2,fill=X,expand=1)
 
+
     def download(self):
         self.execButton.destroy()
+        self.loading_bar.pack(side=TOP,expand=1,fill=BOTH)
         repo_zip_url = 'https://github.com/frotaur/Lenia_Data/archive/refs/heads/main.zip'
- 
+    
         zip_path = os.path.join(self.root_folder,'repo.zip')
 
         shutil.rmtree(self.img_folder) # Remove existing data
@@ -227,8 +230,17 @@ class DownloadPanel(Toplevel):
         # # Download repo as zip
         response = requests.get(repo_zip_url, stream=True)
         response.raise_for_status()
+        count = 0
         with open(zip_path, 'wb') as file:
+            self.loading_bar.start()
+            percent_bytes=0
             for chunk in tqdm(response.iter_content(chunk_size=10240), unit_scale=0.01, unit='MB',total=1e5):
+                count+=1
+                percent_bytes += 0.001
+                if(int(percent_bytes)>=1):
+                    self.loading_bar['value'] += int(percent_bytes)
+                    percent_bytes = 0
+                    self.update()
                 file.write(chunk)
 
         # # Extract zip
@@ -249,6 +261,7 @@ class DownloadPanel(Toplevel):
         os.unlink(zip_path)
 
         self.questext.set("Downloaded data from repository !\n Making pairs... Please wait")
+        self.loading_bar['value'] = 99
         self.update_idletasks()
         # Sleep 1 second before auto-destroying
         self.after(1000,self.destroy)
