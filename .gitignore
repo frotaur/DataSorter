@@ -3,3 +3,7 @@ __pycache__/
 RawData
 .DS_Store
 pairs
+*.spec
+build
+dist
+repo.zip

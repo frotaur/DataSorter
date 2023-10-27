@@ -3,9 +3,10 @@ from tkinter import *
 
 from ButFrame import BestButFrame
 from ViewFrame import ViewFrame
-from OptionPanel import OptionPanel, ResetOptionPanel, DownloadPanel, center_geometry
+from OptionPanel import  ResetOptionPanel, DownloadPanel, center_geometry
 import tkinter.font as tkfont
-import os
+import os, sys
+
 
 
 
@@ -30,21 +31,25 @@ class MainWindow(Tk):
 
         # Set the position of the window
         self.geometry(f'{width}x{height}+{x}+{y}')
-
-        os.chdir(os.path.dirname(__file__))  # Change to working directory
+        if getattr(sys, 'frozen', False):
+            self.application_path = os.path.dirname(sys.executable)
+        elif __file__:
+            self.application_path = os.path.dirname(__file__)
+        # os.chdir(os.path.dirname(__file__))  # Change to working directory
         
         # CREATE FOLDERS IF NOT DONE YET
-        path = "Data"
-        os.makedirs(path,exist_ok=True)
+        self.datapath = os.path.join(self.application_path,"Data")
+        os.makedirs(self.datapath,exist_ok=True)
         self.raw_imgfold = None
 
         # Check if "RawData" folder exists, (removed prompt for datafolder)
-        os.makedirs("RawData",exist_ok=True)
-        self.raw_imgfold = "RawData"
+        self.raw_imgfold = os.path.join(self.application_path,"RawData")
+        os.makedirs(self.raw_imgfold,exist_ok=True)
+        
 
         
         if(len(os.listdir(self.raw_imgfold))==0):
-            self.top=DownloadPanel(self,raw_img_folder=self.raw_imgfold)
+            self.top=DownloadPanel(self,raw_img_folder=self.raw_imgfold,root_folder=self.application_path)
             self.top.wait_window()
         self.lift()
 
@@ -54,7 +59,7 @@ class MainWindow(Tk):
         # Create an upper frame and a button in the frame
         upframe = Frame(self)
 
-        self.picframe= ViewFrame(upframe,self.raw_imgfold,self.datatype)
+        self.picframe= ViewFrame(upframe,self.raw_imgfold,self.datapath)
 
         options_button = Button(upframe,text="Options",command=self.openOption,font=("Unispace", 12, "bold"),
             activebackground="sky blue",bg="blue",foreground="sky blue",width=-15)
@@ -65,7 +70,7 @@ class MainWindow(Tk):
         #     os.makedirs(path,exist_ok=True)
 
         
-        self.downframe = BestButFrame(self,self.picframe)
+        self.downframe = BestButFrame(self,self.picframe,self.datapath)
 
 
         options_button.pack(side=TOP,fill=BOTH,expand=1)
@@ -98,7 +103,7 @@ class MainWindow(Tk):
             raise ValueError(f"Un-supported data type : {file.split('.')[-1]}")
 
     def openOption(self):
-        self.top=ResetOptionPanel(self,raw_img_folder=self.raw_imgfold)
+        self.top=ResetOptionPanel(self,datafolder=self.datapath,raw_img_folder=self.raw_imgfold)
         self.top.wait_window()
 
         self.raw_imgfold=self.top.getFolder()
@@ -107,12 +112,12 @@ class MainWindow(Tk):
         if(not os.path.exists(self.raw_imgfold)):
             raise ValueError("Raw image folder not found")
         self.lift()
-        path="Data"
-        paths=[os.path.join(path,fold) for fold in os.listdir(path)]
 
-        for path in paths:
-            if(not os.path.exists(path)):
-                os.mkdir(path)
+        # paths=[os.path.join(path,fold) for fold in os.listdir(self.datapath)]
+
+        # for path in paths:
+        #     if(not os.path.exists(path)):
+        #         os.mkdir(path)
         self.downframe.destroyButtons()
         self.downframe.createButtons()
 

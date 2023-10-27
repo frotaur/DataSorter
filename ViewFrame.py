@@ -10,18 +10,17 @@ class ViewFrame(Frame):
     """
         Frame to display either a picture or a video
     """
-    def __init__(self,fenetre,datapath,datatype="img",**kwargs):
+    def __init__(self,fenetre,rawdatapath,datapath,**kwargs):
         Frame.__init__(self,fenetre,**kwargs)
         self.WIDTH = 960
 
         self.CANVWIDTH = self.WIDTH//2
         self.CANVHEIGHT = 520
-        self.datapath=datapath
-        self.pairpath=os.path.join("pairs","pairs.csv")
+        self.datapath=rawdatapath
+        self.pairpath=os.path.join(datapath,"pairs","pairs.csv")
 
         self.canvas = {'left':Canvas(self,width=self.CANVWIDTH,height=self.CANVHEIGHT),
                        'right':Canvas(self,width=self.CANVWIDTH,height=self.CANVHEIGHT)}
-        self.datatype = datatype
 
         self.error_text = StringVar(value="")
         self.error_msg = Label(self,textvariable=self.error_text,font=("Unispace", 12, "bold"),fg="red")
@@ -32,7 +31,7 @@ class ViewFrame(Frame):
         self._after_id = {'right' :None, 'left': None}
         self.vid = {'right':None,'left':None}
 
-        self.all_data=[path for path in os.listdir(datapath)]
+        self.all_data=[path for path in os.listdir(rawdatapath)]
         self.vid_num = len(self.all_data)
 
         if(not os.path.exists(self.pairpath)):

@@ -1,4 +1,5 @@
 from tkinter import *
+from tkinter import filedialog
 
 import os, json
 import shutil
@@ -12,7 +13,7 @@ class BestButFrame(Frame):
         Frame with as two buttons, one for left and one for right.
     """
 
-    def __init__(self, fenetre, ViewFrame : ViewFrame,**kwargs):
+    def __init__(self, fenetre, ViewFrame : ViewFrame, datafolder, **kwargs):
         Frame.__init__(self,fenetre,**kwargs)
         
 
@@ -25,7 +26,8 @@ class BestButFrame(Frame):
         self.createButtons()
         
         self.data_so_far=[]
-        self.outputfile = os.path.join("Data","output.json")
+        self.datapath = datafolder
+        self.outputfile = os.path.join(self.datapath,"output.json")
         if(not os.path.exists(self.outputfile)):
             with open(self.outputfile,'w') as f:
                 json.dump([],f)
@@ -68,30 +70,35 @@ class BestButFrame(Frame):
             self.undo()
 
     def createButtons(self):
-        datapath = "Data"
-        nbclass = 2
-        nbrows = 1
+        nbrows = 3
         
         for i in range(nbrows):
             self.rows.append(Frame(self))
 
-        rownbr=-1
 
         
         for i,name in enumerate(['L More Interesting','R More Interesting']):
             print("Classname is :{}".format(name))
-            self.buttons.append(Button(self.rows[rownbr], command=lambda j=i: self.buttonfunc(j),text=name,
+            self.buttons.append(Button(self.rows[0], command=lambda j=i: self.buttonfunc(j),text=name,
                 font=("Unispace", 12, "bold"),activebackground="sky blue",bg="blue",foreground="sky blue",width=-15))
 
         self.rows.append(Frame(self))
-        self.buttons.append(Button(self.rows[-1],command=self.undo,text="UNDO",font=("Unispace", 12, "bold"),
+        self.buttons.append(Button(self.rows[1],command=self.undo,text="UNDO",font=("Unispace", 12, "bold"),
             activebackground="red",bg="light coral",foreground="navy",width=-15))
-
+        self.buttons.append(Button(self.rows[2],command=self.upload_data,text="EXPORT RESULTS",font=("Unispace", 12, "bold"),
+                                   activebackground="green", bg="light green", foreground="green", width=-15))
         for but in self.buttons:
             but.pack(side=LEFT,fill=X,padx=1,expand=1)
         for row in self.rows:
             row.pack(side=TOP,fill=BOTH)
-        
+    
+    def upload_data(self):
+        savedata_dir_name = filedialog.askdirectory(title="Select a folder to save the data")
+        os.makedirs(savedata_dir_name,exist_ok=True)
+
+        with open(os.path.join(savedata_dir_name,"SENDME.json"),'w') as f:
+            json.dump(self.data_so_far,f)
+
     def undo(self):
         if(len(self.moves)>0):
             print(f"undoing {self.moves[-1]}")
