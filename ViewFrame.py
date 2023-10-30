@@ -132,7 +132,8 @@ class ViewFrame(Frame):
             for pos in ['right','left']:
                 if(self.vid[pos] is not None):
                     self.vid[pos].set(cv2.CAP_PROP_POS_FRAMES, 0)
-                    self.video_progress['value'] = 0
+                
+                self.video_progress['value'] = 0
 
     def update_cur_pair(self):
         """
@@ -220,12 +221,13 @@ class ViewFrame(Frame):
             self.canvas[position].create_image(self.CANVWIDTH/2,self.CANVHEIGHT/2,anchor=CENTER,image=self.photo[position])
             if(position=='right'): # Hacky but to update just once every double update
                 self.video_progress['value'] = self.vid['right'].get(cv2.CAP_PROP_POS_FRAMES)/self.vid['right'].get(cv2.CAP_PROP_FRAME_COUNT)*100
-                self.update()
+                # self.update()
         else:
-            # Reset the video to the beginning
-            self.vid[position].set(cv2.CAP_PROP_POS_FRAMES, 0)
-            self.video_progress['value'] = 0
-        self._after_id[position] = self.fenetre.after(20, lambda : self.update_vid(size,position))  # ref  resh every 10ms
+            # Reset the video to the beginning (both)
+            for pos in ['right','left']:
+                self.vid[pos].set(cv2.CAP_PROP_POS_FRAMES, 0)
+                self.video_progress['value'] = 0
+        self._after_id[position] = self.fenetre.after(20, lambda : self.update_vid(size,position))  # ref  resh every 20ms
         
 
     def __del__(self):
