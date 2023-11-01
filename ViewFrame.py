@@ -34,6 +34,8 @@ class ViewFrame(Frame):
 
         self.all_data=[path for path in os.listdir(rawdatapath)]
         self.vid_num = len(self.all_data)
+        self.datamixer = [i for i in range(self.vid_num)] # mixes left column of sequential data when restarting
+        random.shuffle(self.datamixer)
 
         if(not os.path.exists(self.pairpath)):
             self.make_pair_data()
@@ -48,6 +50,7 @@ class ViewFrame(Frame):
 
 
         self.datanumber=0
+
         self.photo={'right':None,'left':None}
 
 
@@ -140,7 +143,8 @@ class ViewFrame(Frame):
             Gets current pair according to datanumber
         """
         if not self.DONE:
-            rando_from = self.pairs[self.pairs['left']==self.all_data[self.datanumber%self.vid_num]] # group with left equal to specified file
+            print(f'Will select {self.datamixer[self.datanumber%self.vid_num]} for left side')
+            rando_from = self.pairs[self.pairs['left']==self.all_data[self.datamixer[self.datanumber%self.vid_num]]] # group with left equal to specified file
             if(len(rando_from)==0):
                 # No pair with such key, just give a random one
                 sampled = self.pairs.sample(1)

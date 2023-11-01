@@ -66,6 +66,8 @@ class BestButFrame(Frame):
             self.buttonfunc(0)
         elif(event.keysym=="Right"):
             self.buttonfunc(1)
+        elif(event.keysym=="Down"):
+            self.buttonfunc(2)
         elif(event.keysym=="BackSpace"):
             self.undo()
         elif(event.keysym=="space"):
@@ -81,17 +83,17 @@ class BestButFrame(Frame):
             self.rows.append(Frame(self))
 
         self.buttons.append(Button(self.rows[0], command=self.restart_video, 
-                                   text="REPLAY FROM START", font=("Unispace", 12, "bold"),
+                                   text="REPLAY FROM START (space)", font=("Unispace", 12, "bold"),
                                    activebackground="gray",bg="dark gray",
                                    foreground="sky blue",width=-15))
-        
-        for i,name in enumerate(['L More Interesting','R More Interesting']):
+        truenum = {0:0,1:2,2:1}
+        for i,name in enumerate(['L More Interesting (left arrow)',"It's a tie (down arrow)",'R More Interesting (right arrow)']):
             print("Classname is :{}".format(name))
-            self.buttons.append(Button(self.rows[1], command=lambda j=i: self.buttonfunc(j),text=name,
+            self.buttons.append(Button(self.rows[1], command=lambda j=i: self.buttonfunc(truenum[j]),text=name,
                 font=("Unispace", 12, "bold"),activebackground="sky blue",bg="blue",foreground="sky blue",width=-15))
 
         self.rows.append(Frame(self))
-        self.buttons.append(Button(self.rows[2],command=self.undo,text="UNDO",font=("Unispace", 12, "bold"),
+        self.buttons.append(Button(self.rows[2],command=self.undo,text="UNDO (backspace)",font=("Unispace", 12, "bold"),
             activebackground="red",bg="light coral",foreground="navy",width=-15))
         self.buttons.append(Button(self.rows[3],command=self.upload_data,text="EXPORT RESULTS",font=("Unispace", 12, "bold"),
                                    activebackground="green", bg="light green", foreground="green", width=-15))
