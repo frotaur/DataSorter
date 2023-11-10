@@ -19,9 +19,14 @@ class ViewFrame(Frame):
         self.CANVHEIGHT = 520-20
         self.datapath=rawdatapath
         self.pairpath=os.path.join(datapath,"pairs","pairs.csv")
+        self.canFrame = {'left' : Frame(self),'right' : Frame(self)}
 
-        self.canvas = {'left':Canvas(self,width=self.CANVWIDTH,height=self.CANVHEIGHT),
-                       'right':Canvas(self,width=self.CANVWIDTH,height=self.CANVHEIGHT)}
+        self.canvas = {'left':Canvas(self.canFrame['left'],width=self.CANVWIDTH,height=self.CANVHEIGHT),
+                       'right':Canvas(self.canFrame['right'],width=self.CANVWIDTH,height=self.CANVHEIGHT)}
+        
+        self.vidCaption = {'left':Label(self.canFrame['left'],text="Left",font=("Unispace", 12, "bold")),
+                           'right':Label(self.canFrame['right'],text="Right",font=("Unispace", 12, "bold"))}
+
 
         self.error_text = StringVar(value="")
         self.error_msg = Label(self,textvariable=self.error_text,font=("Unispace", 12, "bold"),fg="red")
@@ -55,7 +60,7 @@ class ViewFrame(Frame):
 
 
         style = ttk.Style(self)
-        style.theme_use('winnative')
+        style.theme_use('clam')
         # Define the properties of the style
         style.configure("youtube.Horizontal.TProgressbar",
                         thickness=10,  # Height of the progress bar
@@ -77,8 +82,14 @@ class ViewFrame(Frame):
         self.video_progress['value']=0
         # self.error_msg.pack(side=BOTTOM)
         self.video_progress.pack(side=BOTTOM)
-        self.canvas['left'].pack(side=LEFT, padx=5)
-        self.canvas['right'].pack(side=RIGHT, padx=5)
+
+        self.canFrame['left'].pack(side=LEFT, padx=5)
+        self.canFrame['right'].pack(side=RIGHT, padx=5)
+
+        self.canvas['left'].pack(side=BOTTOM,fill=BOTH,expand=1,padx=0,pady=0)
+        self.canvas['right'].pack(side=BOTTOM,fill=BOTH,expand=1)
+        self.vidCaption['left'].pack(side=TOP,fill=X,pady=5)
+        self.vidCaption['right'].pack(side=TOP,fill=X,pady=5)
         
 
         self.update_cur_pair()
@@ -180,6 +191,7 @@ class ViewFrame(Frame):
             vidpaths = self.cur_pair
 
             for pos in ['right','left']: 
+                self.vidCaption[pos]['text'] = vidpaths[pos]
                 self.showVid(os.path.join(self.datapath,vidpaths[pos]),pos)
 
     def set_done(self,value):
