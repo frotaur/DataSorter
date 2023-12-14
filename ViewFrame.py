@@ -22,11 +22,14 @@ class ViewFrame(Frame):
         self.CANVHEIGHT = 520-20
 
         self.datapath = datapath
+        self.rawdatapath = rawdatapath
+
         self.vidpath = os.path.join(rawdatapath,"Videos")
         self.pairpath=os.path.join(datapath,"pairs","pairs.csv")
         self.modelpath = os.path.join(datapath,"model_data")
         self.modelshape=model_shape
-        os.makedirs(self.modelpath,exist_ok=True)
+
+
 
         self.canFrame = {'left' : Frame(self),'right' : Frame(self)}
 
@@ -47,21 +50,7 @@ class ViewFrame(Frame):
         self.vid = {'right':None,'left':None}
 
         self.all_data=[path for path in os.listdir(self.vidpath) if os.path.isfile(os.path.join(self.vidpath,path))]
-        
-        # Preprocess the pk data :
-        safe_update_and_process_data(input_directory=os.path.join(rawdatapath,'Hashed'),
-                                output_pth_file=os.path.join(self.modelpath,'data_tensors.pth'))
-
-        self.data_tensor = torch.load(os.path.join(self.modelpath,'data_tensors.pth')) # Dict of shape (B,smth)
-
-        self.load_predictor()
-        
-        missing = set([os.path.splitext(path)[0] for path in self.all_data]).difference(set(self.data_tensor.keys()))
-        if(len(missing)>0):
-            print(f"Missing data for {len(missing)} videos, will not be able to show them")
-            self.all_data = [path for path in self.all_data if os.path.splitext(path)[0] not in missing]
-            raise Exception(f"Missing data for {len(missing)} videos, will not be able to show them")
-        assert set(self.data_tensor.keys()) >= set([os.path.splitext(path)[0] for path in self.all_data]), 'Some video titles not in data tensors'
+        self.make_training_data()
 
         self.vid_num = len(self.all_data)
         self.datamixer = [i for i in range(self.vid_num)] # mixes left column of sequential data when restarting
@@ -99,6 +88,8 @@ class ViewFrame(Frame):
                {'children': [('Horizontal.Progressbar.pbar',
                               {'side': 'left', 'sticky': 'nswe', 'expand': True})],
                 'sticky': 'nswe'})])
+        # pack the error message
+        self.error_msg.pack(side=BOTTOM)
         # red progress bar for video progress
         self.video_progress = ttk.Progressbar(self, orient = HORIZONTAL, length = 2*self.CANVWIDTH-5, mode = 'determinate',style="youtube.Horizontal.TProgressbar")
         # self.video_progress = Button(self,text="Restart",command=self.restart_video,font=("Unispace", 12, "bold"))
@@ -119,7 +110,26 @@ class ViewFrame(Frame):
         self.showPair()
         
 
-    
+    def make_training_data(self):
+        # Say in error message that we are preparing data
+        self.error_text.set("Preparing data...")
+        self.error_msg.pack(side=BOTTOM)
+        self.update_idletasks()
+
+        os.makedirs(self.modelpath,exist_ok=True)
+        # Preprocess the pk data :
+        safe_update_and_process_data(input_directory=os.path.join(self.rawdatapath,'Hashed'),
+                                output_pth_file=os.path.join(self.modelpath,'data_tensors.pth'))
+
+        self.data_tensor = torch.load(os.path.join(self.modelpath,'data_tensors.pth')) # Dict of shape (B,smth)
+
+        self.load_predictor()
+        
+        missing = set([os.path.splitext(path)[0] for path in self.all_data]).difference(set(self.data_tensor.keys()))
+        assert len(missing)==0, f'Some video titles not in data tensors : {missing}'
+        self.error_text.set("")
+        # self.error_msg.pack_forget()
+
     def make_pair_data(self):
         """
             Creates and save a set of panda dataframes containing all possible pairs
@@ -214,6 +224,7 @@ class ViewFrame(Frame):
         print("Before showpair, done is :",self.DONE)
 
         self.update_cur_pair()
+        self.make_training_data()
         self.showPair()
     
     def currentPair(self):
@@ -244,7 +255,7 @@ class ViewFrame(Frame):
         else:
             self.DONE=value
             self.error_text.set("")
-            self.error_msg.pack_forget()
+            # self.error_msg.pack_forget()
     
     def stopVid(self,position='left'):
         if(self.vid[position] is not None and self.vid[position].isOpened()):
