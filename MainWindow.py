@@ -52,7 +52,10 @@ class MainWindow(Tk):
             self.top=DownloadPanel(self,raw_img_folder=self.raw_imgfold,root_folder=self.application_path)
             self.top.wait_window()
         self.lift()
-
+        # show 'preparing data' label while preparing data
+        label = Label(self, text="Preparing data...", font=("Unispace", 36, "bold"))
+        label.pack(side=TOP, fill=BOTH, expand=1)
+        self.update()
         # Create an upper frame and a button in the frame
         upframe = Frame(self)
 
@@ -69,7 +72,7 @@ class MainWindow(Tk):
         
         self.downframe = BestButFrame(self,self.picframe,self.datapath)
 
-
+        label.destroy()
         options_button.pack(side=TOP,fill=BOTH,expand=1)
         self.picframe.pack(side=TOP, fill=BOTH)
         upframe.pack(side=TOP,fill=X,expand=1)

@@ -299,8 +299,8 @@ class ViewFrame(Frame):
         self.model = EnsemblePredictor(base_model_class=SymmetricDNN,num_predictors=5,input_dim=2*example.shape[0],hidden_layers=self.modelshape,device="cuda:0")
         self.model_directory = os.path.join(os.path.join(self.modelpath,'predictors'))
 
-        if(os.path.exists(os.path.join(self.model_directory,'saved_models'))):
-            self.model.load_models(os.path.join(self.model_directory,'saved_models'))
+        if(os.path.exists(os.path.join(self.model_directory))):
+            self.model.load_models(os.path.join(self.model_directory))
             print('Loaded predictor !')
     
     def train_predictor(self):
@@ -308,18 +308,18 @@ class ViewFrame(Frame):
             Trains predictor, and saves it in datapath/predictors
         """
         print('Training predictor !')
-        os.makedirs(os.path.join(self.datapath,'training'),exist_ok=True)
-        shutil.copy(os.path.join(self.datapath,'output.json'),os.path.join(self.datapath,'training','train_data.json'))
-        train_on_annotation(json_path=os.path.join(self.datapath,'training','train_data.json'),
-                            tensor_data_path=os.path.join(self.datapath,'model_data','data_tensors.pth'),
+        os.makedirs(os.path.join(self.modelpath,'training'),exist_ok=True)
+        shutil.copy(os.path.join(self.datapath,'output.json'),os.path.join(self.modelpath,'training','train_data.json'))
+        train_on_annotation(json_path=os.path.join(self.modelpath,'training','train_data.json'),
+                            tensor_data_path=os.path.join(self.modelpath,'data_tensors.pth'),
                             base_model_class=SymmetricDNN,
                             num_predictors=5,
-                            hidden_layers=[200,2],
+                            hidden_layers=self.modelshape,
                             device="cuda:0",
-                            saved_models_dir=os.path.join(self.datapath,'predictors'),
+                            saved_models_dir=os.path.join(self.modelpath,'predictors'),
                             from_scratch=True,
-                            epochs=100,
-                            batch_size=40,
+                            epochs=1000,
+                            batch_size=20,
                             save_updated_models=True, 
                             with_bootstrap = True)
         

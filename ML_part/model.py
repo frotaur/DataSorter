@@ -61,26 +61,6 @@ class SymmetricDNN(nn.Module):
         
         return nn.Sequential(*layers)
     
-
-    def symmetricLoss(self,pred_xy: torch.Tensor, pred_yx: torch.Tensor, true_labels: torch.Tensor) -> torch.Tensor:
-        """
-            WARNING DO NOT USE !!! IT BREAKS DOWN WHEN LOG(0), use sym_loss_pytorch instead
-            Args :
-            pred_xy/yx : (B, 1) tensor of probabilities, s.t. pred_xy = 1 - pred_yx
-            true_labels : (B, 1) tensor of binary labels, either 0 or 1
-        """
-        
-        raise NotImplementedError("This function is broken, use sym_loss_pytorch instead")
-        # Loss for DNN(x, y) and 1 - DNN(y, x)
-        loss_xy = - (true_labels * torch.log(pred_xy) + (1 - true_labels) * torch.log(1 - pred_xy))
-        loss_yx = - ((1 - true_labels) * torch.log(pred_yx) + true_labels * torch.log(1 - pred_yx))
-        
-        # Combined symmetric loss
-        loss = loss_xy + loss_yx
-
-        #print("loss xy : ", torch.mean(loss_xy), "loss yx : ", torch.mean(loss_yx))
-        #print(pred_xy, pred_yx, true_labels)
-        return torch.mean(loss)
     
     def sym_loss_pytorch(self,pred_xy: torch.Tensor,pred_yx: torch.Tensor,  true_labels: torch.Tensor) -> torch.Tensor:
         """
@@ -89,7 +69,7 @@ class SymmetricDNN(nn.Module):
         loss_xy = torch.nn.BCELoss(reduction='mean')(pred_xy, true_labels)
         loss_yx = torch.nn.BCELoss(reduction='mean')(pred_yx, 1 - true_labels)
 
-        return loss_xy + loss_yx
+        return (loss_xy + loss_yx)/2.
 
     def compute_symmetric_output(self, x: np.array, y: np.array) -> Tuple[np.array, np.array]:
         xy = np.concatenate((x, y), axis=1)
@@ -204,7 +184,6 @@ class SymmetricDNN(nn.Module):
             #print("Loss train = ", loss_train)
             # Backward pass and optimize
             if loss_train > 1e-7:
-                
                 loss_train.backward()
                 optimizer.step()
 
@@ -215,7 +194,7 @@ class SymmetricDNN(nn.Module):
                 if loss_ratio < 1.1:
                     new_reg_coeff /= self.reg_coeff_adaptation  # decrease regularization if overfitting
                 elif loss_ratio > 1.5:
-                    new_reg_coeff *= self.reg_coeff_adaptation  # increase regularization if underfitting
+                    new_reg_coeff *= self.reg_coeff_adaptation*loss_ratio  # increase regularization if underfitting
 
                 # Update optimizer with new_reg_coeff
                 if new_reg_coeff != self.reg_coeff:
@@ -225,7 +204,7 @@ class SymmetricDNN(nn.Module):
 
                 
 
-            if epoch % 10 == 0:
+            if epoch % 50 == 0:
                 print(f'Epoch {epoch}, Train Loss: {loss_train.item()}, Val Loss: {loss_val.item()}, Reg Coeff: {self.reg_coeff}')
 
     

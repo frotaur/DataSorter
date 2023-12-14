@@ -36,9 +36,9 @@ class BestButFrame(Frame):
             self.data_so_far = json.load(f)
         
 
-    def buttonfunc(self,side):
+    def buttonfunc(self,side:float):
         curPair= self.ViewFrame.currentPair() # 'left' 'right' dictionary with video names.
-        
+        print('Called button func with side ; ', side)
         if(curPair is not None):
             self.moves.append(curPair)
             if len(self.moves)>200:
@@ -67,7 +67,7 @@ class BestButFrame(Frame):
         elif(event.keysym=="Right"):
             self.buttonfunc(1)
         elif(event.keysym=="Down"):
-            self.buttonfunc(2)
+            self.buttonfunc(.5)
         elif(event.keysym=="BackSpace"):
             self.undo()
         elif(event.keysym=="space"):
@@ -86,9 +86,9 @@ class BestButFrame(Frame):
                                    text="REPLAY FROM START (space)", font=("Unispace", 12, "bold"),
                                    activebackground="gray",bg="dark gray",
                                    foreground="sky blue",width=-15))
-        truenum = {0:0,1:2,2:1}
+        truenum = {0:0,1:.5,2:1}
         for i,name in enumerate(['L More Interesting (left arrow)',"It's a tie (down arrow)",'R More Interesting (right arrow)']):
-            print("Classname is :{}".format(name))
+            print("Classname is :{}".format(name), f'side value : {truenum[i]}')
             self.buttons.append(Button(self.rows[1], command=lambda j=i: self.buttonfunc(truenum[j]),text=name,
                 font=("Unispace", 12, "bold"),activebackground="sky blue",bg="blue",foreground="sky blue",width=-15))
 
