@@ -229,7 +229,7 @@ class SymmetricDNN(nn.Module):
                 print(f'Epoch {epoch}, Train Loss: {loss_train.item()}, Val Loss: {loss_val.item()}, Reg Coeff: {self.reg_coeff}')
 
     
-    def predict(self, x: np.array, y: np.array) -> np.array:
+    def predict(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         self.model.eval()
         
         with torch.no_grad():
@@ -237,7 +237,7 @@ class SymmetricDNN(nn.Module):
 
             return self.model(xy_tensor).detach()
     
-    def binary_predict(self, x: np.array, y: np.array) -> np.array:
+    def binary_predict(self,  x: torch.Tensor, y: torch.Tensor) ->  torch.Tensor:
         predictions = self.predict(x, y)
         
         # Convert predictions to binary labels

@@ -43,7 +43,7 @@ class BestButFrame(Frame):
             self.moves.append(curPair)
             if len(self.moves)>200:
                 self.moves.pop(0)
-            self.data_so_far.append({**curPair,"side":side})
+            self.data_so_far.append({**{k:vidname[:-4] for k,vidname in curPair.items()},"side":side})
 
             with open(self.outputfile,'w') as f:
                 json.dump(self.data_so_far,f)

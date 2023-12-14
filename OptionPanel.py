@@ -188,7 +188,7 @@ class DownloadPanel(Toplevel):
 
         self.attributes("-topmost","true")  # Always on top
 
-        self.img_folder = raw_img_folder
+        self.img_folder = os.path.join(raw_img_folder,'Videos')
         self.root_folder = root_folder
 
         width =300
@@ -207,7 +207,7 @@ class DownloadPanel(Toplevel):
         self.execButton = Button(self.buttonFrame, command=self.download, text="Download",width=-5,
             font=("Consolas",8,"bold"))
 
-        self.loading_bar = ttk.Progressbar(self, orient="horizontal", length=150, mode="determinate")
+        self.loading_bar = ttk.Progressbar(self, orient="horizontal", length=100, mode="determinate")
         # Pack everything
         self.questlabel.pack(side=TOP)
         self.buttonFrame.pack(side=TOP,expand=1,fill=BOTH)
@@ -234,13 +234,17 @@ class DownloadPanel(Toplevel):
         with open(zip_path, 'wb') as file:
             self.loading_bar.start()
             percent_bytes=0
-            for chunk in tqdm(response.iter_content(chunk_size=10240), unit_scale=0.01, unit='MB',total=1e5):
+            chunk_size = 10240 # 10 kB, 10^4 B
+            reposize = 1e9 # 1 GB, 10^9 B
+
+            for chunk in tqdm(response.iter_content(chunk_size=chunk_size), unit_scale=0.01, unit='MB',total=int(reposize/chunk_size)):
                 count+=1
-                percent_bytes += 0.001
+                percent_bytes += (chunk_size/reposize)*100.
                 if(int(percent_bytes)>=1):
-                    self.loading_bar['value'] += int(percent_bytes)
-                    percent_bytes = 0
+                    # Make this in a thread if possible, but not really necessary.
+                    self.loading_bar['value'] = int(count*chunk_size/reposize*100.)
                     self.update()
+                    percent_bytes = percent_bytes%1
                 file.write(chunk)
 
         # # Extract zip

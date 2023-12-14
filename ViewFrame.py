@@ -5,27 +5,29 @@ import shutil, random
 from tqdm import tqdm
 import pandas as pd
 from tkinter import ttk
-from ML_part import EnsemblePredictor,SymmetricDNN
+from ML_part import EnsemblePredictor,SymmetricDNN, safe_update_and_process_data, train_on_annotation
+import torch
+from threading import Thread
+
 
 class ViewFrame(Frame):
     """
         Frame to display either a picture or a video
     """
-    def __init__(self,fenetre,rawdatapath,datapath,**kwargs):
+    def __init__(self,fenetre,rawdatapath,datapath,model_shape=[200,4],**kwargs):
         Frame.__init__(self,fenetre,**kwargs)
         self.WIDTH = 960
 
-        self.model = EnsemblePredictor(base_model_class=SymmetricDNN,num_predictors=5,input_dim=2*6,hidden_layers=[200,2],device="cuda:0")
-        self.model_directory = os.path.join(os.path.join(datapath,'predictors'))
-
-        if(os.path.exists(os.path.join(self.model_directory,'saved_models'))):
-            self.model.load_models(os.path.join(self.model_directory,'saved_models'))
-            print('Loaded predictor !')
-
         self.CANVWIDTH = self.WIDTH//2
         self.CANVHEIGHT = 520-20
-        self.datapath=rawdatapath
+
+        self.datapath = datapath
+        self.vidpath = os.path.join(rawdatapath,"Videos")
         self.pairpath=os.path.join(datapath,"pairs","pairs.csv")
+        self.modelpath = os.path.join(datapath,"model_data")
+        self.modelshape=model_shape
+        os.makedirs(self.modelpath,exist_ok=True)
+
         self.canFrame = {'left' : Frame(self),'right' : Frame(self)}
 
         self.canvas = {'left':Canvas(self.canFrame['left'],width=self.CANVWIDTH,height=self.CANVHEIGHT),
@@ -44,7 +46,23 @@ class ViewFrame(Frame):
         self._after_id = {'right' :None, 'left': None}
         self.vid = {'right':None,'left':None}
 
-        self.all_data=[path for path in os.listdir(rawdatapath)]
+        self.all_data=[path for path in os.listdir(self.vidpath) if os.path.isfile(os.path.join(self.vidpath,path))]
+        
+        # Preprocess the pk data :
+        safe_update_and_process_data(input_directory=os.path.join(rawdatapath,'Hashed'),
+                                output_pth_file=os.path.join(self.modelpath,'data_tensors.pth'))
+
+        self.data_tensor = torch.load(os.path.join(self.modelpath,'data_tensors.pth')) # Dict of shape (B,smth)
+
+        self.load_predictor()
+        
+        missing = set([os.path.splitext(path)[0] for path in self.all_data]).difference(set(self.data_tensor.keys()))
+        if(len(missing)>0):
+            print(f"Missing data for {len(missing)} videos, will not be able to show them")
+            self.all_data = [path for path in self.all_data if os.path.splitext(path)[0] not in missing]
+            raise Exception(f"Missing data for {len(missing)} videos, will not be able to show them")
+        assert set(self.data_tensor.keys()) >= set([os.path.splitext(path)[0] for path in self.all_data]), 'Some video titles not in data tensors'
+
         self.vid_num = len(self.all_data)
         self.datamixer = [i for i in range(self.vid_num)] # mixes left column of sequential data when restarting
         random.shuffle(self.datamixer)
@@ -57,15 +75,13 @@ class ViewFrame(Frame):
 
         if(len(self.pairs)==0):
             self.set_done(True)    
-        
-        
-
 
         self.datanumber=0
-
+        self.ranked_data_since_last=0
         self.photo={'right':None,'left':None}
 
 
+# +++++++++++++++++++++++++++++++ LAYOUT ++++++++++++++++++++++++++++++++++++++++
         style = ttk.Style(self)
         style.theme_use('clam')
         # Define the properties of the style
@@ -124,11 +140,13 @@ class ViewFrame(Frame):
         df.to_csv(self.pairpath,index=False)
 
     def next_data(self):
+        self.train_check()
         if(self.pairs.shape[0]<=0):
             print("ESTOP")
             self.set_done(True)
         else:
             self.datanumber=(self.datanumber+1) % self.pairs.shape[0]
+            self.ranked_data_since_last+=1
             self.update_cur_pair()
             self.showPair()
 
@@ -138,6 +156,7 @@ class ViewFrame(Frame):
         """
         if not self.DONE:
             self.datanumber = (self.datanumber-1)
+            self.ranked_data_since_last-=1
             to_append = pd.DataFrame({key:[value] for key,value in pair_dict.items()})
             self.pairs = pd.concat([self.pairs,to_append],ignore_index=True)
             self.pairs.to_csv(self.pairpath,index=False)
@@ -161,7 +180,7 @@ class ViewFrame(Frame):
             Gets current pair according to datanumber
         """
         if not self.DONE:
-            print(f'Will select {self.datamixer[self.datanumber%self.vid_num]} for left side')
+            # print(f'Will select {self.datamixer[self.datanumber%self.vid_num]} for left side')
             rando_from = self.pairs[self.pairs['left']==self.all_data[self.datamixer[self.datanumber%self.vid_num]]] # group with left equal to specified file
             if(len(rando_from)==0):
                 # No pair with such key, just give a random one
@@ -173,8 +192,16 @@ class ViewFrame(Frame):
             self.cur_pair = sampled.to_dict(orient='records')[0]
             self.pairs.to_csv(self.pairpath,index=False)
         else:
-            self.cur_pair=None
-        
+            self.cur_pair=None       
+
+    def train_check(self):
+        """
+            Checks if enough data has been ranked to train a new predictor.
+            If yes, starts training in the background.
+        """
+        if(self.ranked_data_since_last>=40):
+            self.ranked_data_since_last=0
+            self.start_training()
 
     def reset_data(self):
         self.make_pair_data()
@@ -183,6 +210,7 @@ class ViewFrame(Frame):
         self.pairs=pd.read_csv(self.pairpath)
 
         self.datanumber=0
+        self.ranked_data_since_last=0
         print("Before showpair, done is :",self.DONE)
 
         self.update_cur_pair()
@@ -196,10 +224,14 @@ class ViewFrame(Frame):
             return
         else:
             vidpaths = self.cur_pair
-
+            x,y = [self.data_tensor[vidpaths[pos].split('.')[0]][None] for pos in ['left','right']]
+            rightbest, rightvar = (tens.item() for tens in self.model.mean_and_variance(x,y))
+            score = {}
+            score['right'] = f'{(1-rightbest)*100:.1f}%'
+            score['left'] = f'Variance : {rightvar:.5f}, {rightbest*100:.1f}%'
             for pos in ['right','left']: 
-                self.vidCaption[pos]['text'] = vidpaths[pos]
-                self.showVid(os.path.join(self.datapath,vidpaths[pos]),pos)
+                self.vidCaption[pos]['text'] = score[pos]
+                self.showVid(os.path.join(self.vidpath,vidpaths[pos]),pos)
 
     def set_done(self,value):
         if(value):
@@ -257,3 +289,43 @@ class ViewFrame(Frame):
         for vid in self.vid.values():
             if(vid.isOpened()):
                 vid.release()
+    
+    def load_predictor(self):
+        """
+            Loads predictors, given shape of model. Will crash if saved predictors don't match shape.
+        """
+        example = next(iter(self.data_tensor.values()))
+        print('Data tensor example shape : ', example.shape)
+        self.model = EnsemblePredictor(base_model_class=SymmetricDNN,num_predictors=5,input_dim=2*example.shape[0],hidden_layers=self.modelshape,device="cuda:0")
+        self.model_directory = os.path.join(os.path.join(self.modelpath,'predictors'))
+
+        if(os.path.exists(os.path.join(self.model_directory,'saved_models'))):
+            self.model.load_models(os.path.join(self.model_directory,'saved_models'))
+            print('Loaded predictor !')
+    
+    def train_predictor(self):
+        """
+            Trains predictor, and saves it in datapath/predictors
+        """
+        print('Training predictor !')
+        os.makedirs(os.path.join(self.datapath,'training'),exist_ok=True)
+        shutil.copy(os.path.join(self.datapath,'output.json'),os.path.join(self.datapath,'training','train_data.json'))
+        train_on_annotation(json_path=os.path.join(self.datapath,'training','train_data.json'),
+                            tensor_data_path=os.path.join(self.datapath,'model_data','data_tensors.pth'),
+                            base_model_class=SymmetricDNN,
+                            num_predictors=5,
+                            hidden_layers=[200,2],
+                            device="cuda:0",
+                            saved_models_dir=os.path.join(self.datapath,'predictors'),
+                            from_scratch=True,
+                            epochs=100,
+                            batch_size=40,
+                            save_updated_models=True, 
+                            with_bootstrap = True)
+        
+        self.load_predictor()
+        print('Training finished !')
+
+    def start_training(self):
+        training_thread = Thread(target=self.train_predictor)
+        training_thread.start()

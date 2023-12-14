@@ -53,9 +53,6 @@ class MainWindow(Tk):
             self.top.wait_window()
         self.lift()
 
-        # Get data type :
-        self.datatype = self.get_datatype(self.raw_imgfold)
-        assert self.datatype == "vid" # Limit ourselves to videos for now
         # Create an upper frame and a button in the frame
         upframe = Frame(self)
 
@@ -83,24 +80,8 @@ class MainWindow(Tk):
     def changeimg(self):
         self.picframe.next_data()
 
-    # def getimgpath(self):
-    #     return self.picframe.current_data()
-
     def mainloop(self):
         Tk.mainloop(self)
-
-    def get_datatype(self,raw_imgfold):
-        """ Get data type from raw image folder"""
-        file = os.listdir(raw_imgfold)[0].lower()
-
-        if(file.endswith(".jpg") or file.endswith(".jpeg") or file.endswith(".png")):
-            print('detected datatype : imgs')
-            return "img"
-        elif(file.endswith(".mp4") or file.endswith(".avi") or file.endswith(".mov")):
-            print('detected datatype : vids')
-            return "vid"
-        else:
-            raise ValueError(f"Un-supported data type : {file.split('.')[-1]}")
 
     def openOption(self):
         self.top=ResetOptionPanel(self,datafolder=self.datapath,raw_img_folder=self.raw_imgfold)
