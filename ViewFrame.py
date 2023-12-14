@@ -5,7 +5,7 @@ import shutil, random
 from tqdm import tqdm
 import pandas as pd
 from tkinter import ttk
-
+from ML_part import EnsemblePredictor,SymmetricDNN
 
 class ViewFrame(Frame):
     """
@@ -14,6 +14,13 @@ class ViewFrame(Frame):
     def __init__(self,fenetre,rawdatapath,datapath,**kwargs):
         Frame.__init__(self,fenetre,**kwargs)
         self.WIDTH = 960
+
+        self.model = EnsemblePredictor(base_model_class=SymmetricDNN,num_predictors=5,input_dim=2*6,hidden_layers=[200,2],device="cuda:0")
+        self.model_directory = os.path.join(os.path.join(datapath,'predictors'))
+
+        if(os.path.exists(os.path.join(self.model_directory,'saved_models'))):
+            self.model.load_models(os.path.join(self.model_directory,'saved_models'))
+            print('Loaded predictor !')
 
         self.CANVWIDTH = self.WIDTH//2
         self.CANVHEIGHT = 520-20
