@@ -220,8 +220,9 @@ class DownloadPanel(Toplevel):
         repo_zip_url = 'https://github.com/frotaur/Lenia_Data/archive/refs/heads/main.zip'
     
         zip_path = os.path.join(self.root_folder,'repo.zip')
-
-        shutil.rmtree(self.img_folder) # Remove existing data
+        if(os.path.exists(self.img_folder)):
+            shutil.rmtree(self.img_folder) # Remove existing data
+            
         if(os.path.exists(os.path.join(self.root_folder,'pairs'))):
             shutil.rmtree(os.path.join(self.root_folder,'pairs'))
         self.questext.set("Downloading data from repository... Please wait")

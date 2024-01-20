@@ -2,7 +2,7 @@ from tkinter import *
 
 
 from ButFrame import BestButFrame
-from ViewFrame import ViewFrame
+from ViewFrame import ViewFrameSingle
 from OptionPanel import  ResetOptionPanel, DownloadPanel, center_geometry
 import tkinter.font as tkfont
 import os, sys
@@ -44,13 +44,13 @@ class MainWindow(Tk):
 
         # Check if "RawData" folder exists, (removed prompt for datafolder)
         self.raw_imgfold = os.path.join(self.application_path,"RawData")
-        os.makedirs(self.raw_imgfold,exist_ok=True)
-        
+        os.makedirs(os.path.join(self.raw_imgfold,'Videos'),exist_ok=True)
 
         
-        if(len(os.listdir(self.raw_imgfold))==0):
+        if(len(os.listdir(self.raw_imgfold))==0 and False):
             self.top=DownloadPanel(self,raw_img_folder=self.raw_imgfold,root_folder=self.application_path)
             self.top.wait_window()
+
         self.lift()
         # show 'preparing data' label while preparing data
         label = Label(self, text="Preparing data...", font=("Unispace", 36, "bold"))
@@ -59,7 +59,7 @@ class MainWindow(Tk):
         # Create an upper frame and a button in the frame
         upframe = Frame(self)
 
-        self.picframe= ViewFrame(upframe,self.raw_imgfold,self.datapath)
+        self.picframe= ViewFrameSingle(upframe,self.raw_imgfold,self.datapath)
 
         options_button = Button(upframe,text="Options",command=self.openOption,font=("Unispace", 12, "bold"),
             activebackground="sky blue",bg="blue",foreground="sky blue",width=-15)

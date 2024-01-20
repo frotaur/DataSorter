@@ -3,7 +3,7 @@ from tkinter import filedialog
 
 import os, json
 import shutil
-from ViewFrame import ViewFrame
+from ViewFrame import ViewFrameClassic
 
 
 
@@ -13,7 +13,7 @@ class BestButFrame(Frame):
         Frame with as two buttons, one for left and one for right.
     """
 
-    def __init__(self, fenetre, ViewFrame : ViewFrame, datafolder, **kwargs):
+    def __init__(self, fenetre, ViewFrame : ViewFrameClassic, datafolder, **kwargs):
         Frame.__init__(self,fenetre,**kwargs)
         
 
@@ -87,7 +87,7 @@ class BestButFrame(Frame):
                                    activebackground="gray",bg="dark gray",
                                    foreground="sky blue",width=-15))
         truenum = {0:0,1:.5,2:1}
-        for i,name in enumerate(['L More Interesting (left arrow)',"It's a tie (down arrow)",'R More Interesting (right arrow)']):
+        for i,name in enumerate(['Its Interesting (left arrow)',"Its REMARKABLE (down arrow)",'Its not Interesting (right arrow)']):
             print("Classname is :{}".format(name), f'side value : {truenum[i]}')
             self.buttons.append(Button(self.rows[1], command=lambda j=i: self.buttonfunc(truenum[j]),text=name,
                 font=("Unispace", 12, "bold"),activebackground="sky blue",bg="blue",foreground="sky blue",width=-15))
@@ -130,7 +130,7 @@ class MultiButFrame(Frame):
         by the number of folders in Data/
     """
 
-    def __init__(self, fenetre, ViewFrame : ViewFrame,**kwargs):
+    def __init__(self, fenetre, ViewFrame : ViewFrameClassic,**kwargs):
         Frame.__init__(self,fenetre,**kwargs)
         
 
