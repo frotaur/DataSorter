@@ -12,7 +12,9 @@ import os, sys
 
 
 class MainWindow(Tk):
-
+    """
+        Main window of the video ranking for CA videos
+    """
     def __init__(self, **kwargs):
         Tk.__init__(self, **kwargs)
         # fontana = tkfont.Font(family="Unispace", size=12, weight="bold")
@@ -51,6 +53,7 @@ class MainWindow(Tk):
         if(len(os.listdir(self.raw_imgfold))==0):
             self.top=DownloadPanel(self,raw_img_folder=self.raw_imgfold,root_folder=self.application_path)
             self.top.wait_window()
+    
         self.lift()
         # show 'preparing data' label while preparing data
         label = Label(self, text="Preparing data...", font=("Unispace", 36, "bold"))
@@ -81,12 +84,19 @@ class MainWindow(Tk):
         self.bind("<KeyRelease>",self.downframe.keyReleased)
 
     def changeimg(self):
+        """
+            Displays next set of images/videos
+        """
         self.picframe.next_data()
 
     def mainloop(self):
         Tk.mainloop(self)
 
+
     def openOption(self):
+        """
+            Opens the option panel, to reset saved progress and so on.
+        """
         self.top=ResetOptionPanel(self,datafolder=self.datapath,raw_img_folder=self.raw_imgfold)
         self.top.wait_window()
 

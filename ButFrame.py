@@ -10,7 +10,7 @@ from ViewFrame import ViewFrame
 
 class BestButFrame(Frame):
     """
-        Frame with as two buttons, one for left and one for right.
+        Frame with two buttons, one for left and one for right.
     """
 
     def __init__(self, fenetre, ViewFrame : ViewFrame, datafolder, **kwargs):
