@@ -35,7 +35,7 @@ class SqueezeReward(ConfigModule):
         return torch.flatten(x, 1)
 
 if __name__=='__main__':
-    model = SqueezeReward('cuda')
+    model = SqueezeReward('cpu')
     test_img = torch.ones(1, 3, 300, 200)
     print('Test image shape : ', test_img.shape)
     print('Model output shape : ', model(test_img).shape)
