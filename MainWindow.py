@@ -15,7 +15,11 @@ class MainWindow(Tk):
     """
         Main window of the video ranking for CA videos
     """
-    def __init__(self, **kwargs):
+    def __init__(self, reward_model=None, **kwargs):
+        """
+            Args:
+            reward_model : RewardModel, model used to rank the videos, if not None.
+        """
         Tk.__init__(self, **kwargs)
         # fontana = tkfont.Font(family="Unispace", size=12, weight="bold")
         # m_len = fontana.measure("M")
@@ -62,7 +66,7 @@ class MainWindow(Tk):
         # Create an upper frame and a button in the frame
         upframe = Frame(self)
 
-        self.picframe= ViewFrame(upframe,self.raw_imgfold,self.datapath)
+        self.picframe= ViewFrame(upframe,self.raw_imgfold,self.datapath, reward_model=reward_model)
 
         options_button = Button(upframe,text="Options",command=self.openOption,font=("Unispace", 12, "bold"),
             activebackground="sky blue",bg="blue",foreground="sky blue",width=-15)

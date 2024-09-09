@@ -5,16 +5,23 @@ import shutil, random
 from tqdm import tqdm
 import pandas as pd
 from tkinter import ttk
-from ML_part import EnsemblePredictor,SymmetricDNN, safe_update_and_process_data, train_on_annotation
+from reward_training import EnsemblePredictor,SymmetricDNN, safe_update_and_process_data, train_on_annotation
 import torch
 from threading import Thread
-
+from reward_training import RewardTrainer
 
 class ViewFrame(Frame):
     """
         Frame to display either a picture or a video
     """
-    def __init__(self,fenetre,rawdatapath,datapath,**kwargs):
+    def __init__(self,fenetre,rawdatapath,datapath,reward_trainer : RewardTrainer,**kwargs):
+        """
+            Args:
+            fenetre : Tk parent window
+            rawdatapath : str, path to the raw data folder
+            datapath : str, path to the data folder
+            reward_trainer : RewardTrainer, trainer used to rank the videos
+        """
         Frame.__init__(self,fenetre,**kwargs)
         self.WIDTH = 960
 
@@ -26,6 +33,7 @@ class ViewFrame(Frame):
 
         self.vidpath = os.path.join(rawdatapath,"Videos")
         self.pairpath=os.path.join(datapath,"pairs","pairs.csv")
+        self.reward_trainer = reward_trainer
         # self.modelpath = os.path.join(datapath,"model_data")
         # self.modelshape=model_shape
 
@@ -50,7 +58,6 @@ class ViewFrame(Frame):
         self.vid = {'right':None,'left':None}
 
         self.all_data=[path for path in os.listdir(self.vidpath) if os.path.isfile(os.path.join(self.vidpath,path))]
-        self.make_training_data()
 
         self.vid_num = len(self.all_data)
         self.datamixer = [i for i in range(self.vid_num)] # mixes left column of sequential data when restarting
@@ -109,26 +116,6 @@ class ViewFrame(Frame):
         self.update_cur_pair()
         self.showPair()
         
-
-    def make_training_data(self):
-        # Say in error message that we are preparing data
-        self.error_text.set("Preparing data...")
-        self.error_msg.pack(side=BOTTOM)
-        self.update_idletasks()
-
-        # os.makedirs(self.modelpath,exist_ok=True)
-        # Preprocess the pk data :
-        # safe_update_and_process_data(input_directory=os.path.join(self.rawdatapath,'Hashed'),
-        #                         output_pth_file=os.path.join(self.modelpath,'data_tensors.pth'))
-
-        # self.data_tensor = torch.load(os.path.join(self.modelpath,'data_tensors.pth')) # Dict of shape (B,smth)
-
-        # self.load_predictor()
-        
-        # missing = set([os.path.splitext(path)[0] for path in self.all_data]).difference(set(self.data_tensor.keys()))
-        # assert len(missing)==0, f'Some video titles not in data tensors : {missing}'
-        self.error_text.set("")
-        # self.error_msg.pack_forget()
 
     def make_pair_data(self):
         """

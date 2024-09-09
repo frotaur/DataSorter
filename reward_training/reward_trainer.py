@@ -40,4 +40,26 @@ class RewardTrainer(Trainer):
             
         """
         
-        super().__init__(model=model, optim=optimizer, scheduler=scheduler, save_loc='reward_model_train',device=device)
+        super().__init__(model=model, optim=optimizer, scheduler=scheduler, save_loc='reward_model_train',device=device,
+                         no_logging=True)
+    
+    def create_datapoint(self, data1, data2, annotation):
+        """
+            Create a datapoint from the two datas given, provided the annotation.
+            TO BE REDEFINED IN INHERITING CLASSES.
+        """
+        raise NotImplementedError('Method create_datapoint must be implemented in inheriting class.')
+
+    def train_model(self):
+        """
+            Train the model on the dataset created by create_datapoint.
+            TO BE REDEFINED IN INHERITING CLASSES.
+        """
+        raise NotImplementedError('Method train_model must be implemented in inheriting class.')
+    
+    def estimate_pair(self, data):
+        """
+            Estimate the reward for the data given.
+            TO BE REDEFINED IN INHERITING CLASSES.
+        """
+        raise NotImplementedError('Method estimate_pair must be implemented in inheriting class.')
