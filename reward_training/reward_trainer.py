@@ -40,12 +40,13 @@ class RewardTrainer(Trainer):
             
         """
         
-        super().__init__(model=model, optim=optimizer, scheduler=scheduler, save_loc='reward_model_train',device=device,
+        super().__init__(model=model, optim=optimizer, scheduler=scheduler, save_loc='reward_model_train',project_name='reward_train',device=device,
                          no_logging=True)
     
-    def create_datapoint(self, data1, data2, annotation):
+    def create_datapoint(self, data1, data2, annotation) -> str:
         """
             Create a datapoint from the two datas given, provided the annotation.
+            Returns string for the location of the datapoint.
             TO BE REDEFINED IN INHERITING CLASSES.
         """
         raise NotImplementedError('Method create_datapoint must be implemented in inheriting class.')

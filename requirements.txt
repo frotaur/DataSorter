@@ -1,5 +1,7 @@
-opencv_python==4.7.0.68
-pandas==1.5.3
-Pillow==10.1.0
-Requests==2.31.0
-tqdm==4.64.1
+opencv_python
+pandas
+Pillow
+Requests
+tqdm
+av
+torch

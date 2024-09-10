@@ -24,49 +24,66 @@ class ImageRewardTrainer(RewardTrainer):
         
         print("WARNING : DUMMY LOSS USED FOR NOW, TO BE CHANGED")
 
-    def create_datapoint(self, data1, data2, annotation):
+    def create_datapoint(self, data1, data2, annotation) -> str:
         """ 
         Creates a datapoint for the dataset of the image reward model. 
 
         Args : 
         data1/2 : tensor, (T,3,H,W) or (3,H,W) tensor representing the video or last frame
         annotation : int, 0, 1 or 0.5, representing the annotation of the user
+
+        Returns: 
+        str, the path to the saved datapoint
         """
 
-        # Check if the data is a video or a single frame
-        if len(data1.shape) == 4:
-            data1 = data1[-1]
-            data2 = data2[-1]
+        data1, data2 = self._get_image_from_data(data1), self._get_image_from_data(data2)
 
+        data_path = f'./{self.data_fold}/{len(os.listdir(self.data_fold))}.pt'
         # Save the data in the appropriate folder
-        torch.save({'data1':data1, 'data2':data2, 'annotation':annotation}, f'./{self.data_fold}/{len(os.listdir(self.data_fold))}.pt')
+        torch.save({'data1':data1, 'data2':data2, 'annotation':torch.tensor([annotation,1-annotation],dtype=torch.float)}, data_path)
+        return data_path
 
-    def estimate_pair(self, image):
+    def _get_image_from_data(self, data):
+        """
+            Returns the image from the data, which can be a video or a single frame.
+
+            Args:
+            data : (T,3,H,W) or (3,H,W) tensor representing the video or last frame
+
+            Returns:
+            (3,H,W) tensor, representing the image.
+        """
+        # Use clone() to avoid memory issues when saving
+        if len(data.shape) == 4:
+            return data[-1].clone()
+        return data
+
+    @torch.no_grad()
+    def estimate_pair(self, data1, data2):
         """
             Estimates the reward for a pair of (batched) images.
 
             Args:
-            image : (B,3,H,W) tensors representing the images to compare.
+            data : (3,H,W) or (T,3,H,W) tensors representing the videos or last frame to compare.
 
             Returns:
-            r : (B,1) tensor of floats, representing the reward for each image.
+            (2,) tensor of floats, representing the probability of winning for each image.
         """
-        r = self.model(image) # (B,1)
+        img1, img2 = self._get_image_from_data(data1)[None].to(self.device), self._get_image_from_data(data2)[None].to(self.device)
+        rewards = torch.stack([self.model(img1),self.model(img2)],dim=1).squeeze() # (2,) 
+        rewards = F.softmax(rewards, dim=0) # (2,), softmax to get probabilities
 
-        return r
+        return rewards
     
     def process_batch(self, batch_data):
         data1, data2, annotation = batch_data
-        data1 = data1.to(self.device)
-        data2 = data2.to(self.device)
-        annotation = annotation.to(self.device)
+        data1 = data1.to(self.device) # (B,3,H,W)
+        data2 = data2.to(self.device) # (B,3,H,W)
+        annotation = annotation.to(self.device) # (B,2)
 
-        r1 = self.model(data1)
-        r2 = self.model(data2)
+        rewards = torch.stack([self.model(data1),self.model(data2)],dim=1).squeeze(-1) # (B,2) 
 
-        ## NOTE, WARNING : DUMMY LOSS USED FOR NOW, TO BE CHANGED
-        # Compute annotation with sigmoid diff :
-        loss = F.mse_loss(F.sigmoid(r1-r2), annotation)
+        loss = F.cross_entropy(rewards, annotation, reduce='mean') # Does softmax and cross entropy, simply the logits are computed independently
 
         return loss
 
@@ -83,5 +100,6 @@ class ImageRewardTrainer(RewardTrainer):
         """
             Trains the reward model on the dataset created by create_datapoint.
         """
-        self.train_steps(steps=1000, batch_size=10, save_every=1e6, pickup=False)
+        self.dataset.refresh() # Refreshsed the dataset before launching training.
+        self.train_steps(steps=100, batch_size=5, save_every=1e6, pickup=False)
         print('Training done !')

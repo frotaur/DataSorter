@@ -1,8 +1,9 @@
 from MainWindow import MainWindow
-
+from reward_training import ImageRewardTrainer
 
 def main():
-    fenetre = MainWindow()
+    reward_train = ImageRewardTrainer('cuda')
+    fenetre = MainWindow(reward_trainer=reward_train)
 
     fenetre.mainloop()
 

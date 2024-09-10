@@ -5,10 +5,10 @@ import shutil, random
 from tqdm import tqdm
 import pandas as pd
 from tkinter import ttk
-from reward_training import EnsemblePredictor,SymmetricDNN, safe_update_and_process_data, train_on_annotation
-import torch
-from threading import Thread
+import torch, torchvision
+from threading import Thread, Event
 from reward_training import RewardTrainer
+import time
 
 class ViewFrame(Frame):
     """
@@ -34,9 +34,6 @@ class ViewFrame(Frame):
         self.vidpath = os.path.join(rawdatapath,"Videos")
         self.pairpath=os.path.join(datapath,"pairs","pairs.csv")
         self.reward_trainer = reward_trainer
-        # self.modelpath = os.path.join(datapath,"model_data")
-        # self.modelshape=model_shape
-
 
 
         self.canFrame = {'left' : Frame(self),'right' : Frame(self)}
@@ -56,6 +53,9 @@ class ViewFrame(Frame):
         self.fenetre=fenetre
         self._after_id = {'right' :None, 'left': None}
         self.vid = {'right':None,'left':None}
+        self.tens_vid = {'right':None,'left':None}
+
+        self.loaded = {'right':Event(),'left':Event()}
 
         self.all_data=[path for path in os.listdir(self.vidpath) if os.path.isfile(os.path.join(self.vidpath,path))]
 
@@ -115,7 +115,7 @@ class ViewFrame(Frame):
 
         self.update_cur_pair()
         self.showPair()
-        
+
 
     def make_pair_data(self):
         """
@@ -196,7 +196,7 @@ class ViewFrame(Frame):
             Checks if enough data has been ranked to train a new predictor.
             If yes, starts training in the background.
         """
-        if(self.ranked_data_since_last>=40):
+        if(self.ranked_data_since_last>=3):
             self.ranked_data_since_last=0
             self.start_training()
 
@@ -224,11 +224,35 @@ class ViewFrame(Frame):
             vidpaths = self.cur_pair
 
             score = {}
-            score['right'] = f'right_text'
-            score['left'] = f'left_text'
+            score['right'] = f'Loading score...'
+            score['left'] = f'Loading score...'
+
             for pos in ['right','left']: 
                 self.vidCaption[pos]['text'] = score[pos]
                 self.showVid(os.path.join(self.vidpath,vidpaths[pos]),pos)
+                Thread(target=self._show_score).start()
+
+    def load_completed(self):
+        return self.loaded['left'].is_set() and self.loaded['right'].is_set()
+
+    def wait_load(self):
+        self.loaded['left'].wait()
+        self.loaded['right'].wait()
+
+    def _show_score(self):
+        """
+            Shows the score of the current pair
+        """
+        if not self.load_completed():
+            self.wait_load()
+        
+        output = self.reward_trainer.estimate_pair(self.tens_vid['left'],self.tens_vid['right']) # (2,)
+
+        score = {}
+        score['left'] = f'{output[0].item()*100:.2f}%'
+        score['right'] = f'Right : {output[1].item()*100:.2f}%'
+        for pos in ['right','left']: 
+            self.vidCaption[pos]['text'] = score[pos]
 
     def set_done(self,value):
         if(value):
@@ -250,8 +274,17 @@ class ViewFrame(Frame):
             self.fenetre.after_cancel(self._after_id[position])
             self._after_id[position] = None
 
+    def load_tens_video(self, video_path, position):
+        self.tens_vid[position] = (torchvision.io.read_video(video_path,output_format='TCHW',pts_unit='sec')[0]).float()/255.
+        # print(f'Loaded {position} video tensor, of shape : ', self.tens_vid[position].shape)
+        self.loaded[position].set()
+
+
     def showVid(self,vidpath,position='left'):
         self.stopVid(position)
+        self.loaded[position].clear()
+        tens_thread = Thread(target=self.load_tens_video,args=(vidpath,position))
+        tens_thread.start()
 
         self.vid[position]= cv2.VideoCapture(vidpath)
         if not self.vid[position].isOpened():
@@ -261,8 +294,8 @@ class ViewFrame(Frame):
         height = int(self.vid[position].get(cv2.CAP_PROP_FRAME_HEIGHT))
 
         ratio = min(self.CANVWIDTH/width,self.CANVHEIGHT/height)
-
         re_size  = (int(ratio*width),int(ratio*height))
+
         self.update_vid(re_size,position)
     
     def update_vid(self,size,position):
@@ -286,42 +319,27 @@ class ViewFrame(Frame):
         for vid in self.vid.values():
             if(vid.isOpened()):
                 vid.release()
+        os._exit(0)
     
-    def load_predictor(self):
+    def create_datapoint(self,annotation):
         """
-            Loads predictors, given shape of model. Will crash if saved predictors don't match shape.
+            Creates datapoint given annotation and current images. To be called in a THREAD !
+            Args : 
+            annotation : float, 0, 0.5 or 1
+            return_path : list, list to append the path to the datapoint
         """
-        print('This used to load the predictor')
-        # example = next(iter(self.data_tensor.values()))
-        # print('Data tensor example shape : ', example.shape)
-        # self.model = EnsemblePredictor(base_model_class=SymmetricDNN,num_predictors=5,input_dim=2*example.shape[0],hidden_layers=self.modelshape,device="cuda:0")
-        # self.model_directory = os.path.join(os.path.join(self.modelpath,'predictors'))
+        if not self.load_completed():
+            self.wait_load()
 
-        # if(os.path.exists(os.path.join(self.model_directory))):
-        #     self.model.load_models(os.path.join(self.model_directory))
-        #     print('Loaded predictor !')
-    
+        return self.reward_trainer.create_datapoint(self.tens_vid['left'],self.tens_vid['right'],annotation)
+
+
     def train_predictor(self):
         """
             Trains predictor, and saves it in datapath/predictors
         """
         print('Training predictor (when its re-added)!')
-        # os.makedirs(os.path.join(self.modelpath,'training'),exist_ok=True)
-        # shutil.copy(os.path.join(self.datapath,'output.json'),os.path.join(self.modelpath,'training','train_data.json'))
-        # train_on_annotation(json_path=os.path.join(self.modelpath,'training','train_data.json'),
-        #                     tensor_data_path=os.path.join(self.modelpath,'data_tensors.pth'),
-        #                     base_model_class=SymmetricDNN,
-        #                     num_predictors=5,
-        #                     hidden_layers=self.modelshape,
-        #                     device="cuda:0",
-        #                     saved_models_dir=os.path.join(self.modelpath,'predictors'),
-        #                     from_scratch=True,
-        #                     epochs=1000,
-        #                     batch_size=20,
-        #                     save_updated_models=True, 
-        #                     with_bootstrap = True)
-        
-        # self.load_predictor()
+        self.reward_trainer.train_model()
         print('Training finished !')
 
     def start_training(self):

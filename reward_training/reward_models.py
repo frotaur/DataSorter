@@ -29,7 +29,7 @@ class SqueezeReward(ConfigModule):
         assert C == 3, 'Input must have 3 channels'
         x = torch.nn.functional.interpolate(x, size=(224, 224), mode='bilinear')
         x = self.features(x)
-        print('Features after forward : ', x.shape)
+
         B, C, H, W = x.shape
         x = self.scorer(x.reshape(B,C*H*W))
         return torch.flatten(x, 1)

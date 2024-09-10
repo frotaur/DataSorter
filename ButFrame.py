@@ -4,13 +4,13 @@ from tkinter import filedialog
 import os, json
 import shutil
 from ViewFrame import ViewFrame
-
+from threading import Thread
 
 
 
 class BestButFrame(Frame):
     """
-        Frame with two buttons, one for left and one for right.
+        Frame with buttons, to rank videos/images.
     """
 
     def __init__(self, fenetre, ViewFrame : ViewFrame, datafolder, **kwargs):
@@ -26,6 +26,7 @@ class BestButFrame(Frame):
         self.createButtons()
         
         self.data_so_far=[]
+        self.datapoints_so_far=[]
         self.datapath = datafolder
         self.outputfile = os.path.join(self.datapath,"output.json")
         if(not os.path.exists(self.outputfile)):
@@ -38,17 +39,19 @@ class BestButFrame(Frame):
 
     def buttonfunc(self,side:float):
         curPair= self.ViewFrame.currentPair() # 'left' 'right' dictionary with video names.
-        print('Called button func with side ; ', side)
+        print('Called button func with annotaion ; ', side) # side is probability of preferring the left video
         if(curPair is not None):
             self.moves.append(curPair)
             if len(self.moves)>200:
                 self.moves.pop(0)
             self.data_so_far.append({**{k:vidname[:-4] for k,vidname in curPair.items()},"side":side})
+            self.datapoints_so_far.append(self.ViewFrame.create_datapoint(side))
 
             with open(self.outputfile,'w') as f:
                 json.dump(self.data_so_far,f)
 
             self.ViewFrame.next_data()
+
 
     def destroyButtons(self):
         for but in self.buttons:
@@ -63,9 +66,9 @@ class BestButFrame(Frame):
 
     def keyReleased(self,event):
         if(event.keysym=="Left"):
-            self.buttonfunc(0)
-        elif(event.keysym=="Right"):
             self.buttonfunc(1)
+        elif(event.keysym=="Right"):
+            self.buttonfunc(0)
         elif(event.keysym=="Down"):
             self.buttonfunc(.5)
         elif(event.keysym=="BackSpace"):
@@ -117,12 +120,17 @@ class BestButFrame(Frame):
 
             self.moves.pop(-1)
             self.data_so_far.pop(-1)
+            last_datapoint = self.datapoints_so_far.pop(-1)
+            os.remove(last_datapoint)
             with open(self.outputfile,'w') as f:
                 json.dump(self.data_so_far,f)
 
     def reset_data(self):
         self.moves=[]
         self.data_so_far=[]
+        for datapoint in self.datapoints_so_far:
+            os.remove(datapoint)
+        self.datapoints_so_far=[]
         
 class MultiButFrame(Frame):
     """
