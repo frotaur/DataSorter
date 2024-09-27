@@ -196,7 +196,7 @@ class ViewFrame(Frame):
             Checks if enough data has been ranked to train a new predictor.
             If yes, starts training in the background.
         """
-        if(self.ranked_data_since_last>=3):
+        if(self.ranked_data_since_last>=20):
             self.ranked_data_since_last=0
             self.start_training()
 
@@ -312,7 +312,7 @@ class ViewFrame(Frame):
             for pos in ['right','left']:
                 self.vid[pos].set(cv2.CAP_PROP_POS_FRAMES, 0)
                 self.video_progress['value'] = 0
-        self._after_id[position] = self.fenetre.after(20, lambda : self.update_vid(size,position))  # ref  resh every 20ms
+        self._after_id[position] = self.fenetre.after(10, lambda : self.update_vid(size,position))  # ref  resh every 20ms
         
 
     def __del__(self):
