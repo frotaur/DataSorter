@@ -33,9 +33,9 @@ class VJepaRewardTrainer(RewardTrainer):
         else :
             optim = AdamW([
                 {'params': vjepa_params , 'lr': lr_jepa},
-                {'params': model.head_params(), 'lr': 1e-3}
+                {'params': model.head_params(), 'lr': 1e-4}
             ])
-        schedu = LinearLR(optim,start_factor=1e-5, end_factor=1, total_iters=300)
+        schedu = LinearLR(optim,start_factor=1e-5, end_factor=1, total_iters=100)
 
         super().__init__(model=model, data_loc='vjepa_data', optimizer=optim, 
                          scheduler=schedu, no_logging=no_logging, device=device)
@@ -125,6 +125,18 @@ class VJepaRewardTrainer(RewardTrainer):
     
         return loss
 
+    def process_batch_valid(self, batch_data):
+        data1, data2, annotation = batch_data
+        data1 = data1.to(self.device) # (B,T,3,H,W)
+        data2 = data2.to(self.device) # (B,T,3,H,W)
+        annotation = annotation.to(self.device) # (B,2)
+
+        rewards = torch.stack([self.model(data1),self.model(data2)],dim=1).squeeze(-1) # (B,2) 
+
+        loss = self.unadjusted_cross_entropy(rewards, annotation)
+    
+        return loss
+
     def unadjusted_cross_entropy(self, logits, target):
         return F.cross_entropy(logits, target, reduction='mean')
 
@@ -147,6 +159,6 @@ class VJepaRewardTrainer(RewardTrainer):
             Trains the reward model on the dataset created by create_datapoint.
         """
         self.dataset.refresh() # Refreshes the dataset before launching training.
-        self.train_steps(steps=50, batch_size=10, step_log=2, save_every=1e6, pickup=False)
+        self.train_steps(steps=400, batch_size=10, valid_every=20, step_log=2, save_every=1e6, pickup=False,
+                         num_workers=4)
         print('Training done !')
-

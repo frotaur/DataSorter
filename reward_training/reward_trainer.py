@@ -82,7 +82,7 @@ class RewardTrainer(Trainer):
         missing =0 
         for annotation in tqdm(annotations):
             dataname1 = f"{video_folder}/{annotation['left']}.mp4"
-            dataname2 = f"{video_folder}/{annotation['left']}.mp4"
+            dataname2 = f"{video_folder}/{annotation['right']}.mp4"
             score = annotation['side']
             
             try:

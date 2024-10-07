@@ -6,7 +6,10 @@ from torch.utils.data import DataLoader, Subset
 import torch, torch.nn.functional as F
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import LinearLR
-import os
+import os, random
+from torchvision import transforms
+import wandb
+
 
 class ImageRewardTrainer(RewardTrainer):
     """
@@ -88,8 +91,36 @@ class ImageRewardTrainer(RewardTrainer):
         rewards = torch.stack([self.model(data1),self.model(data2)],dim=1).squeeze(-1) # (B,2) 
 
         loss = self.unadjusted_cross_entropy(rewards, annotation)
+        
+        self.logger.log({'lr':self.scheduler.get_last_lr()[0]},commit=False)
+        return loss
+
+    def process_batch_valid(self, batch_data):
+        data1, data2, annotation = batch_data
+        data1 = data1.to(self.device) # (B,3,H,W)
+        data2 = data2.to(self.device) # (B,3,H,W)
+        annotation = annotation.to(self.device) # (B,2)
+
+        rewards = torch.stack([self.model(data1),self.model(data2)],dim=1).squeeze(-1) # (B,2) 
+
+        loss = self.unadjusted_cross_entropy(rewards, annotation)
     
         return loss
+
+    def valid_log(self):
+        data1, data2, annotation = self.val_dataset[random.randint(0,len(self.val_dataset)-1)]
+        # Convert tensors to images
+        transform = transforms.ToPILImage()
+        image1 = transform(data1)
+        image2 = transform(data2)
+        estimate = self.estimate_pair(data1, data2)
+        # Log images with annotations
+        self.logger.log({
+            "Validation/Image1": wandb.Image(image1, caption=f'{estimate[0]}%, vs ann : {annotation}'),
+            "Validation/Image2": wandb.Image(image2, caption=f'{estimate[1]}%, vs ann : {1-annotation}')
+        })
+
+
 
     def adjusted_cross_entropy(self, logits, target):
         probas = F.softmax(logits, dim=1)
@@ -120,5 +151,5 @@ class ImageRewardTrainer(RewardTrainer):
             Trains the reward model on the dataset created by create_datapoint.
         """
         self.dataset.refresh() # Refreshes the dataset before launching training.
-        self.train_steps(steps=50, batch_size=10, save_every=1e6, pickup=False)
+        self.train_steps(steps=100, batch_size=10, valid_every=20, step_log=2, save_every=1e6, pickup=False)
         print('Training done !')
