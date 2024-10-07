@@ -1,4 +1,4 @@
-from .v_jepa import get_vit_large
+from .v_jepa import get_vit_large, get_vit_tiny
 from torchenhanced import ConfigModule, DevModule
 import torch, torch.nn as nn
 
@@ -11,17 +11,20 @@ class VJEPAReward(ConfigModule):
         Expected video shape : (B, 3, T, H, W)
     """
 
-    def __init__(self, vjepa_weights=None, num_frames=16, device='cpu'):
+    def __init__(self, vjepa_size='large', vjepa_weights=None, num_frames=16, device='cpu'):
         """
             vjepa_weights : path to the VJEPA weights, if None, random weights are used
             num_frames : number of frames in the video, should be
             16 as it is how it's trained.
 
         """
-        configo = dict(vjepa_weights=vjepa_weights)
-        super().__init__(configo, device=device)
+        super().__init__()
         
-        self.vjepa = get_vit_large(pre_weights_file=vjepa_weights)
+        if(vjepa_size=='large'):
+            self.vjepa = get_vit_large(pre_weights_file=vjepa_weights)
+        if(vjepa_size=='tiny'):
+            self.vjepa = get_vit_tiny(pre_weights_file=vjepa_weights)
+    
         self.vjepa.to(device)
         self.vjepa.eval()
 

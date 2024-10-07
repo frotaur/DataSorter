@@ -1,4 +1,4 @@
-from .vit import vit_large,vit_huge
+from .vit import vit_large,vit_tiny
 import torch
 
 
@@ -11,6 +11,14 @@ def get_vit_large(pre_weights_file=None, num_frames=16):
         print('Load successful, nice!')
     return model
 
+def get_vit_tiny(save_weights_file=None, num_frames=16):
+    model = vit_tiny(num_frames=num_frames)
+
+    if save_weights_file is not None:
+        model.load_state_dict(torch.load(save_weights_file))
+        print('Load successful, nice!')
+    
+    return model
 
 def _vit_state_dict(file_path):
     original_state_dict = torch.load(file_path)['encoder']

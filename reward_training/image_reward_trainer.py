@@ -17,7 +17,7 @@ class ImageRewardTrainer(RewardTrainer):
     def __init__(self, no_logging = True, device='cpu'):
         model = SqueezeReward(device)
         optim = AdamW(model.parameters(),lr=1e-3)
-        schedu = LinearLR(optim,start_factor=1e-5, end_factor=1, total_iters=300)
+        schedu = LinearLR(optim,start_factor=1e-5, end_factor=1, total_iters=40)
         super().__init__(model=model, data_loc='image_data', optimizer=optim, 
                          scheduler=schedu, no_logging=no_logging, device=device)
 
