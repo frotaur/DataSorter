@@ -1,1 +1,2 @@
-from .image_reward_dataset import ImageRewardDataset
+from .memory_reward_dataset import MemoryRewardDataset
+from .disk_reward_dataset import DiskRewardDataset

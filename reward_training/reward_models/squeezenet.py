@@ -20,9 +20,9 @@ class SqueezeReward(ConfigModule):
         # Replace the last two layers (final_conv and classifier)
         self.scorer = torch.nn.Linear(512*13*13,1)
 
-        # Set weights to all ones, for testing :
-        self.scorer.weight.data.fill_(1)
-        self.scorer.bias.data.fill_(0)
+        # # Set weights to all ones, for testing :
+        # self.scorer.weight.data.fill_(1)
+        # self.scorer.bias.data.fill_(0)
 
     def forward(self, x):
         B, C, H, W = x.shape

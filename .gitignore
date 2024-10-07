@@ -1,4 +1,4 @@
-Data/*
+Data
 __pycache__/
 RawData
 .DS_Store
@@ -8,3 +8,5 @@ build
 dist
 repo.zip
 reward_model_train
+checkpoints
+vjepa_data

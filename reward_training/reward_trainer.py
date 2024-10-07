@@ -1,7 +1,9 @@
 from torchenhanced import ConfigModule, Trainer
-import torch, torch.nn as nn
+import torch, torch.nn as nn, torchvision
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import LinearLR
+import json, os
+from tqdm import tqdm
 
 
 class RewardTrainer(Trainer):
@@ -42,7 +44,10 @@ class RewardTrainer(Trainer):
         
         super().__init__(model=model, optim=optimizer, scheduler=scheduler, save_loc='reward_model_train',project_name='reward_train',device=device,
                          no_logging=no_logging)
-    
+        
+        self.data_fold = data_loc
+
+        os.makedirs(data_loc, exist_ok=True)
     def create_datapoint(self, data1, data2, annotation) -> str:
         """
             Create a datapoint from the two datas given, provided the annotation.
@@ -64,3 +69,42 @@ class RewardTrainer(Trainer):
             TO BE REDEFINED IN INHERITING CLASSES.
         """
         raise NotImplementedError('Method estimate_pair must be implemented in inheriting class.')
+    
+    def annotation_to_data(self, annotations_file:str, video_folder:str):
+        """
+            Given an annotations file, and a data folder, will create the datapoints corresponding to the annotations.
+            NOTE : right now, this works only if the video_folder contains mp4 videos. To be chnaged in the future, if needed.
+        """
+        with open(annotations_file, 'r') as f:
+            annotations = json.load(f)
+        
+        print('Creating dataset...')
+        missing =0 
+        for annotation in tqdm(annotations):
+            dataname1 = f"{video_folder}/{annotation['left']}.mp4"
+            dataname2 = f"{video_folder}/{annotation['left']}.mp4"
+            score = annotation['side']
+            
+            try:
+                data1 = (torchvision.io.read_video(dataname1, output_format='TCHW', pts_unit='sec')[0]).float() / 255.
+                data2 = (torchvision.io.read_video(dataname2, output_format='TCHW', pts_unit='sec')[0]).float() / 255.
+            except FileNotFoundError:
+                print(f'File not found: {dataname1}.mp4 or {dataname2}.mp4. Skipping this pair.')
+                print(f'REMOVING pair from annotation, as it is outdated')
+                annotations.remove(annotation)
+                missing+=1
+                continue
+
+            self.create_datapoint(data1, data2, score)
+        
+        with open(annotations_file, 'w') as f:
+            json.dump(annotations, f)
+        
+        print(f'Dataset created! Removed {missing} missing pairs from the annotations file.')
+    
+    @property
+    def num_datapoints(self):
+        """
+            Returns the number of datapoints in the dataset.
+        """
+        return len(os.listdir(self.data_fold))

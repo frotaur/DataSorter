@@ -73,7 +73,7 @@ class ViewFrame(Frame):
             self.set_done(True)    
 
         self.datanumber=0
-        self.ranked_data_since_last=0
+        self.ranked_data_since_last = reward_trainer.num_datapoints # Number of datapoint already there
         self.photo={'right':None,'left':None}
 
 
@@ -338,7 +338,7 @@ class ViewFrame(Frame):
         """
             Trains predictor, and saves it in datapath/predictors
         """
-        print('Training predictor (when its re-added)!')
+        print('Training predictor !')
         self.reward_trainer.train_model()
         print('Training finished !')
 

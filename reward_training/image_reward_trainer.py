@@ -1,6 +1,6 @@
 from .reward_models.squeezenet import SqueezeReward
 from .reward_trainer import RewardTrainer
-from .datasets import ImageRewardDataset
+from .datasets import MemoryRewardDataset
 
 from torch.utils.data import DataLoader, Subset
 import torch, torch.nn.functional as F
@@ -21,7 +21,7 @@ class ImageRewardTrainer(RewardTrainer):
         super().__init__(model=model, data_loc='image_data', optimizer=optim, 
                          scheduler=schedu, no_logging=no_logging, device=device)
 
-        self.dataset =  ImageRewardDataset(self.data_fold)
+        self.dataset =  MemoryRewardDataset(self.data_fold)
         
         self.train_dataset = None # Created on the spot
         self.val_dataset = None # Created on the spot
@@ -45,7 +45,7 @@ class ImageRewardTrainer(RewardTrainer):
         torch.save({'data1':data1, 'data2':data2, 'annotation':torch.tensor([annotation,1-annotation],dtype=torch.float)}, data_path)
         
         return data_path
-
+    
     def _get_image_from_data(self, data):
         """
             Returns the image from the data, which can be a video or a single frame.
@@ -98,6 +98,7 @@ class ImageRewardTrainer(RewardTrainer):
         return F.nll_loss(probas.log(), target, reduction='mean') # Doesn't work for soft labels
 
     def unadjusted_cross_entropy(self, logits, target):
+
         return F.cross_entropy(logits, target, reduction='mean')
 
     def get_loaders(self, batch_size, num_workers=0):
