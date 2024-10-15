@@ -15,16 +15,19 @@ class VJepaRewardTrainer(RewardTrainer):
         is used to create a reward model for images.
     """
 
-    def __init__(self, vjepa_size='large', vjepa_weights_file=None, lr_jepa=1e-6, no_logging = True, device='cpu'):
+    def __init__(self, vjepa_size='large', vjepa_weights_file=None, head_skip=1,
+                  lr_jepa=1e-6, no_logging = True, device='cpu'):
         """
+            vjepa_size : str, 'large' or 'tiny', size of the VJEPA model
             vjepa_weights_file : str, path to the VJEPA weights
+            head_skip : int, size of jumps in the kept head tokens. 1 means all tokens are kept.
             lr_jepa : float, learning rate for the VJEPA model. Pass 0. to freeze the model.
             no_logging : bool, whether to log the training or not
             device : str, device to train the model on
         """
         assert vjepa_size in ['large','tiny'], 'vjepa_size must be either large or tiny'
         
-        model = VJEPAReward(vjepa_weights=vjepa_weights_file, device=device)
+        model = VJEPAReward(vjepa_size=vjepa_size,vjepa_weights=vjepa_weights_file, head_skip=head_skip,device=device)
         vjepa_params = model.vjepa_params()
         if(lr_jepa<=1e-8):
             for param in vjepa_params:

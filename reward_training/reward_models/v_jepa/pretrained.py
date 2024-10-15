@@ -2,11 +2,11 @@ from .vit import vit_large,vit_tiny
 import torch
 
 
-def get_vit_large(pre_weights_file=None, num_frames=16):
+def get_vit_large(save_weights_file=None, num_frames=16):
     model = vit_large(num_frames=num_frames)
 
-    if pre_weights_file is not None:
-        state_dict = _vit_state_dict(pre_weights_file)
+    if save_weights_file is not None:
+        state_dict = _vit_state_dict(save_weights_file)
         model.load_state_dict(state_dict)
         print('Load successful, nice!')
     return model

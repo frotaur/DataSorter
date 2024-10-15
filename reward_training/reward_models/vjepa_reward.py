@@ -24,9 +24,9 @@ class VJEPAReward(ConfigModule):
         super().__init__()
         
         if(vjepa_size=='large'):
-            self.vjepa = get_vit_large(pre_weights_file=vjepa_weights)
+            self.vjepa = get_vit_large(save_weights_file=vjepa_weights)
         if(vjepa_size=='tiny'):
-            self.vjepa = get_vit_tiny(pre_weights_file=vjepa_weights)
+            self.vjepa = get_vit_tiny(save_weights_file=vjepa_weights)
     
         self.vjepa.to(device)
         self.vjepa.eval()
@@ -82,6 +82,7 @@ class VJEPAReward(ConfigModule):
         # x = torch.nn.functional.interpolate(x, size=(224, 224), mode='bilinear')
         x = torch.einsum('btchw->bcthw', x) # (B,T,C,H,W) -> (B,C,T,H,W), VJEPA expects this
         x = self.vjepa(x) # (B,T,D)
+        x = x[:,::self.head_skip] # (B,T//head_skip,D)
         x = self.score_head['minihead'](x) # (B,T,D)
        
         x = self.score_head['last_linear'](x[:,-1,:]) # (B,1) Linear head on last token
