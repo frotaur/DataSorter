@@ -13,7 +13,7 @@ class VideoRewardTrainer(RewardTrainer):
         Reward trainer for video reward models.
     """
 
-    def __init__(self, model, lr_body=1e-6, no_logging = True, device='cpu'):
+    def __init__(self, model, lr_body=1e-6, no_logging = True, data_loc='video_data', device='cpu'):
         """
             model : nn.Module, the video reward model. Should have a head_params, and a body_params method.
             lr_body : float, learning rate for the body of the model. Pass 0. to freeze the model.
@@ -27,6 +27,7 @@ class VideoRewardTrainer(RewardTrainer):
             for param in body_params:
                 param.requires_grad = False
             optim = AdamW(model.head_params(),lr=1e-3)
+            lr_body= 0.
         else :
             optim = AdamW([
                 {'params': body_params , 'lr': lr_body},
@@ -34,8 +35,9 @@ class VideoRewardTrainer(RewardTrainer):
             ])
         schedu = LinearLR(optim,start_factor=1e-5, end_factor=1, total_iters=300)
 
-        super().__init__(model=model, data_loc='video_data', optimizer=optim, 
-                         scheduler=schedu, no_logging=no_logging, device=device)
+        run_config = {'lr_body':lr_body, 'lr_head':1e-3, 'model_config':model.config}
+        super().__init__(model=model, data_loc=data_loc, optimizer=optim, 
+                         scheduler=schedu, no_logging=no_logging, run_config=run_config,device=device)
 
         self.dataset =  DiskRewardDataset(self.data_fold)
         
@@ -72,7 +74,7 @@ class VideoRewardTrainer(RewardTrainer):
             data : (T,3,H,W) representing the video
 
             Returns:
-            (T',3,H',W') tensor, processed video in vjepa format
+            (T',3,H',W') tensor, processed video in model's format
         """
         tar_T, _, tar_H, tar_W = self.input_shape
         T = video.shape[0]
@@ -123,6 +125,18 @@ class VideoRewardTrainer(RewardTrainer):
     
         return loss
 
+    def process_batch_valid(self, batch_data):
+        data1, data2, annotation = batch_data
+        data1 = data1.to(self.device) # (B,T,3,H,W)
+        data2 = data2.to(self.device) # (B,T,3,H,W)
+        annotation = annotation.to(self.device) # (B,2)
+
+        rewards = torch.stack([self.model(data1),self.model(data2)],dim=1).squeeze(-1) # (B,2) 
+
+        loss = self.unadjusted_cross_entropy(rewards, annotation)
+    
+        return loss
+
     def unadjusted_cross_entropy(self, logits, target):
         return F.cross_entropy(logits, target, reduction='mean')
 
@@ -145,6 +159,7 @@ class VideoRewardTrainer(RewardTrainer):
             Trains the reward model on the dataset created by create_datapoint.
         """
         self.dataset.refresh() # Refreshes the dataset before launching training.
-        self.train_steps(steps=steps, batch_size=batch_size, step_log=2, save_every=1e6, pickup=False)
+        self.train_steps(steps=steps, batch_size=batch_size, valid_every=20, step_log=2, save_every=1e6, pickup=False,
+                         num_workers=4)
         print('Training done !')
 

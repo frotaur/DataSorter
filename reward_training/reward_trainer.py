@@ -35,7 +35,7 @@ class RewardTrainer(Trainer):
 
     """
 
-    def __init__(self, model : nn.Module, data_loc, optimizer, scheduler, no_logging=True, device='cpu'):
+    def __init__(self, model : nn.Module, data_loc, optimizer, scheduler, no_logging=True, run_config={}, device='cpu'):
         """
             Args:
             model : model to be trained. Probably to be hardcoded in inheriting classes
@@ -43,7 +43,7 @@ class RewardTrainer(Trainer):
         """
         
         super().__init__(model=model, optim=optimizer, scheduler=scheduler, save_loc='reward_model_train',project_name='reward_train',device=device,
-                         no_logging=no_logging)
+                         no_logging=no_logging, run_config=run_config)
         
         self.data_fold = data_loc
 

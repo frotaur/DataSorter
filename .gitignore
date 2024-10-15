@@ -9,5 +9,4 @@ dist
 repo.zip
 reward_model_train
 checkpoints
-vjepa_data
-image_data
+*_data/

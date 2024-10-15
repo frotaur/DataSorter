@@ -46,9 +46,15 @@ class VJEPAReward(ConfigModule):
         self.score_head = nn.ModuleDict(dict(minihead=minihead, last_linear=last_linear))
         self.to(device)
 
-        self.input_shape = (3,num_frames,224,224)
+        self.input_shape = (num_frames,3,224,224)
 
     def vjepa_params(self):
+        """
+            Returns the parameters of the VJEPA model
+        """
+        return self.vjepa.parameters()
+
+    def body_params(self):
         """
             Returns the parameters of the VJEPA model
         """

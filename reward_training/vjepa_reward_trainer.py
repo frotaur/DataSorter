@@ -78,9 +78,9 @@ class VJepaRewardTrainer(RewardTrainer):
             data : (T,3,H,W) representing the video
 
             Returns:
-            (3,T',H',W') tensor, processed video in vjepa format
+            (T',3,H',W') tensor, processed video
         """
-        _, tar_T, tar_H, tar_W = self.input_shape
+        tar_T, _, tar_H, tar_W = self.input_shape
         T = video.shape[0]
         assert tar_T <= video.shape[0], f'Video {video.shape[0]} frames, need at least {tar_T} frames'
 
@@ -90,6 +90,8 @@ class VJepaRewardTrainer(RewardTrainer):
         video = torch.einsum('tchw->cthw', video) # interpolate expects channels first
         # Resize the frames
         video = F.interpolate(video, size=(tar_H,tar_W), mode='bilinear')
+        video = torch.einsum('cthw->tchw', video) # back to normal
+        
         assert video.shape == self.input_shape, f'Video shape {video.shape} not equal to {self.input_shape}'
 
         return video

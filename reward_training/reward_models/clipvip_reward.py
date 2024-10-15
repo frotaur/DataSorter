@@ -23,9 +23,9 @@ class CLIPVIPReward(ConfigModule):
         super().__init__()
         
         if(patch_size==32):
-            self.clipvip = clipvip32(pre_weights_file=clipvip_weights)
+            self.clipvip = clipvip32(weights_path=clipvip_weights)
         elif(patch_size==16):
-            self.clipvip = clipvip16(pre_weights_file=clipvip_weights)
+            self.clipvip = clipvip16(weights_path=clipvip_weights)
         else :
             raise ValueError(f'Patch size {patch_size} not supported, use 16 or 32')
     
@@ -47,9 +47,9 @@ class CLIPVIPReward(ConfigModule):
         self.minihead = minihead
         self.to(device)
 
-        self.input_shape = (3,num_frames,224,224)
+        self.input_shape = (num_frames,3,224,224)
 
-    def clipvip_params(self):
+    def body_params(self):
         """
             Returns the parameters of the CLIPVIP model
         """
@@ -80,7 +80,8 @@ class CLIPVIPReward(ConfigModule):
         B, T, C, H, W = x.shape
         assert C == 3, 'Input must have 3 channels'
 
-        # x = torch.nn.functional.interpolate(x, size=(224, 224), mode='bilinear')
+        x = self.clipvip(x)
+
         if(self.minihead):
             x = self.score_head['minihead'](x.last_hidden_state)[:,-1,:] # (B,T,D) keep last token
         else:
