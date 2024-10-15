@@ -8,36 +8,33 @@ from torch.optim import AdamW
 from torch.optim.lr_scheduler import LinearLR
 import os
 
-class VJepaRewardTrainer(RewardTrainer):
+class VideoRewardTrainer(RewardTrainer):
     """
-        DEPRECATED :
-        Reward trainer based on a SqueezeNet model, which
-        is used to create a reward model for images.
+        Reward trainer for video reward models.
     """
 
-    def __init__(self, vjepa_size='large', vjepa_weights_file=None, lr_jepa=1e-6, no_logging = True, device='cpu'):
+    def __init__(self, model, lr_body=1e-6, no_logging = True, device='cpu'):
         """
-            vjepa_weights_file : str, path to the VJEPA weights
-            lr_jepa : float, learning rate for the VJEPA model. Pass 0. to freeze the model.
+            model : nn.Module, the video reward model. Should have a head_params, and a body_params method.
+            lr_body : float, learning rate for the body of the model. Pass 0. to freeze the model.
             no_logging : bool, whether to log the training or not
             device : str, device to train the model on
-        """
-        assert vjepa_size in ['large','tiny'], 'vjepa_size must be either large or tiny'
-        
-        model = VJEPAReward(vjepa_weights=vjepa_weights_file, device=device)
-        vjepa_params = model.vjepa_params()
-        if(lr_jepa<=1e-8):
-            for param in vjepa_params:
+        """        
+        model = model.to(device)
+        body_params = model.body_params()
+
+        if(lr_body<=1e-8):
+            for param in body_params:
                 param.requires_grad = False
             optim = AdamW(model.head_params(),lr=1e-3)
         else :
             optim = AdamW([
-                {'params': vjepa_params , 'lr': lr_jepa},
+                {'params': body_params , 'lr': lr_body},
                 {'params': model.head_params(), 'lr': 1e-3}
             ])
         schedu = LinearLR(optim,start_factor=1e-5, end_factor=1, total_iters=300)
 
-        super().__init__(model=model, data_loc='vjepa_data', optimizer=optim, 
+        super().__init__(model=model, data_loc='video_data', optimizer=optim, 
                          scheduler=schedu, no_logging=no_logging, device=device)
 
         self.dataset =  DiskRewardDataset(self.data_fold)
@@ -75,9 +72,9 @@ class VJepaRewardTrainer(RewardTrainer):
             data : (T,3,H,W) representing the video
 
             Returns:
-            (3,T',H',W') tensor, processed video in vjepa format
+            (T',3,H',W') tensor, processed video in vjepa format
         """
-        _, tar_T, tar_H, tar_W = self.input_shape
+        tar_T, _, tar_H, tar_W = self.input_shape
         T = video.shape[0]
         assert tar_T <= video.shape[0], f'Video {video.shape[0]} frames, need at least {tar_T} frames'
 
@@ -87,6 +84,7 @@ class VJepaRewardTrainer(RewardTrainer):
         video = torch.einsum('tchw->cthw', video) # interpolate expects channels first
         # Resize the frames
         video = F.interpolate(video, size=(tar_H,tar_W), mode='bilinear')
+        video = torch.einsum('cthw->tchw', video) # back to normal
         assert video.shape == self.input_shape, f'Video shape {video.shape} not equal to {self.input_shape}'
 
         return video
@@ -142,11 +140,11 @@ class VJepaRewardTrainer(RewardTrainer):
 
         return train_dataloader, valid_dataloader
 
-    def train_model(self):
+    def train_model(self, batch_size=10, steps=50):
         """
             Trains the reward model on the dataset created by create_datapoint.
         """
         self.dataset.refresh() # Refreshes the dataset before launching training.
-        self.train_steps(steps=50, batch_size=10, step_log=2, save_every=1e6, pickup=False)
+        self.train_steps(steps=steps, batch_size=batch_size, step_log=2, save_every=1e6, pickup=False)
         print('Training done !')
 

@@ -11,12 +11,15 @@ class VJEPAReward(ConfigModule):
         Expected video shape : (B, 3, T, H, W)
     """
 
-    def __init__(self, vjepa_size='large', vjepa_weights=None, num_frames=16, device='cpu'):
+    def __init__(self, vjepa_size='large', vjepa_weights=None, 
+                 num_frames=16, head_skip=1, device='cpu'):
         """
+            vjepa_size : str, 'large' or 'tiny', size of the VJEPA model
             vjepa_weights : path to the VJEPA weights, if None, random weights are used
-            num_frames : number of frames in the video, should be
-            16 as it is how it's trained.
-
+            num_frames : number of frames in the video, (pretrained ones are 16)
+            head_skip : int, size of jumps in the kept head tokens. 1 means all tokens are kept. 
+            2 means every other token is kept.
+            device : str, device to use for the model
         """
         super().__init__()
         
@@ -28,11 +31,13 @@ class VJEPAReward(ConfigModule):
         self.vjepa.to(device)
         self.vjepa.eval()
 
-        # Freeze the weights of vjepa
-        for param in self.vjepa.parameters():
-            param.requires_grad = False
-        
+        # # Freeze the weights of vjepa NOTE : removed, done in the trainer
+        # for param in self.vjepa.parameters():
+        #     param.requires_grad = False
+        self.head_skip = head_skip
         out_tokens, out_dim = self._get_vjepa_output_shape(num_frames)
+        
+        print(f'Minihead transformer treats {out_tokens} tokens of dimension {out_dim}')
         # Replace the last two layers (final_conv and classifier)
         minihead = MiniBlock(embed_dim=out_dim, num_tokens=out_tokens, device=device)
 
@@ -61,19 +66,21 @@ class VJEPAReward(ConfigModule):
         """
         input_image = torch.randn(1,3,num_frames,224,224, device=self.device)
         output = self.vjepa(input_image) # (1, patch_num, patch_dim)
+        output = output[0,::self.head_skip] # (patch_num//head_skip, patch_dim)
 
-        return output.shape[1:]
+        return output.shape
 
     def forward(self, x):
         """
-            x : (B, 3, T, H, W) tensor, correct dimensions for the model
+            x : (B, T, 3, H, W) tensor, correct dimensions for the model
 
             Returns : (B,) tensor of scores
         """
-        B, C, T, H, W = x.shape
+        B, T, C, H, W = x.shape
         assert C == 3, 'Input must have 3 channels'
 
         # x = torch.nn.functional.interpolate(x, size=(224, 224), mode='bilinear')
+        x = torch.einsum('btchw->bcthw', x) # (B,T,C,H,W) -> (B,C,T,H,W), VJEPA expects this
         x = self.vjepa(x) # (B,T,D)
         x = self.score_head['minihead'](x) # (B,T,D)
        
