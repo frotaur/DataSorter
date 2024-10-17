@@ -14,13 +14,14 @@ class ViewFrame(Frame):
     """
         Frame to display either a picture or a video
     """
-    def __init__(self,fenetre,rawdatapath,datapath,reward_trainer : RewardTrainer,**kwargs):
+    def __init__(self,fenetre,rawdatapath,datapath,reward_trainer : RewardTrainer,live_training =False, **kwargs):
         """
             Args:
             fenetre : Tk parent window
             rawdatapath : str, path to the raw data folder
             datapath : str, path to the data folder
             reward_trainer : RewardTrainer, trainer used to rank the videos
+            live_training : if True, will train the model in the background
         """
         Frame.__init__(self,fenetre,**kwargs)
         self.WIDTH = 960
@@ -34,7 +35,7 @@ class ViewFrame(Frame):
         self.vidpath = os.path.join(rawdatapath,"Videos")
         self.pairpath=os.path.join(datapath,"pairs","pairs.csv")
         self.reward_trainer = reward_trainer
-
+        self.live_training = live_training
 
         self.canFrame = {'left' : Frame(self),'right' : Frame(self)}
 
@@ -196,7 +197,7 @@ class ViewFrame(Frame):
             Checks if enough data has been ranked to train a new predictor.
             If yes, starts training in the background.
         """
-        if(self.ranked_data_since_last>=20):
+        if(self.ranked_data_since_last>=20 and self.live_training):
             self.ranked_data_since_last=0
             self.start_training()
 

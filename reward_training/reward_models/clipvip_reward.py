@@ -71,6 +71,18 @@ class CLIPVIPReward(ConfigModule):
 
         return last_hidden.shape
 
+    def load_weights(self, path):
+        """
+            Loads weights of pretrained model
+        """
+        self.load_state_dict(torch.load(path))
+
+    def save_weights(self, path):
+        """
+            Saves the weights of the model
+        """
+        torch.save(self.state_dict(), path)
+        
     def forward(self, x):
         """
             x : (B, T, C, H, W) tensor, correct dimensions for the model
