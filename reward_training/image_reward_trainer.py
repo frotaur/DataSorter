@@ -17,12 +17,12 @@ class ImageRewardTrainer(RewardTrainer):
         is used to create a reward model for images.
     """
 
-    def __init__(self, no_logging = True, device='cpu'):
+    def __init__(self, lr_body=0., no_logging = True, device='cpu'):
         model = SqueezeReward(device)
-        optim = AdamW(model.parameters(),lr=1e-3)
-        schedu = LinearLR(optim,start_factor=1e-5, end_factor=1, total_iters=40)
-        super().__init__(model=model, data_loc='image_data', optimizer=optim, 
-                         scheduler=schedu, no_logging=no_logging, device=device)
+        run_name = f'image_lr{lr_body}'
+
+        super().__init__(model=model, data_loc='image_data', lr_body=lr_body,
+                          no_logging=no_logging,run_name=run_name, device=device)
 
         self.dataset =  MemoryRewardDataset(self.data_fold)
         
@@ -146,10 +146,11 @@ class ImageRewardTrainer(RewardTrainer):
 
         return train_dataloader, valid_dataloader
 
-    def train_model(self):
+    def train_model(self, steps=50, batch_size=10):
         """
             Trains the reward model on the dataset created by create_datapoint.
         """
         self.dataset.refresh() # Refreshes the dataset before launching training.
-        self.train_steps(steps=100, batch_size=10, valid_every=20, step_log=2, save_every=1e6, pickup=False)
+        valid_every = max(1,200//batch_size)
+        self.train_steps(steps=steps, batch_size=batch_size, valid_every=valid_every, step_log=2, save_every=1e6, pickup=False)
         print('Training done !')

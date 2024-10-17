@@ -21,23 +21,12 @@ class VideoRewardTrainer(RewardTrainer):
             device : str, device to train the model on
         """        
         model = model.to(device)
-        body_params = model.body_params()
-
-        if(lr_body<=1e-8):
-            for param in body_params:
-                param.requires_grad = False
-            optim = AdamW(model.head_params(),lr=1e-3)
-            lr_body= 0.
-        else :
-            optim = AdamW([
-                {'params': body_params , 'lr': lr_body},
-                {'params': model.head_params(), 'lr': 1e-3}
-            ])
-        schedu = LinearLR(optim,start_factor=1e-5, end_factor=1, total_iters=300)
 
         run_config = {'lr_body':lr_body, 'lr_head':1e-3, 'model_config':model.config}
-        super().__init__(model=model, data_loc=data_loc, optimizer=optim, 
-                         scheduler=schedu, no_logging=no_logging, run_config=run_config,device=device)
+
+        run_name = f'clipvip_lr{lr_body}'
+        super().__init__(model=model, data_loc=data_loc, lr_body=lr_body, no_logging=no_logging, 
+                         run_config=run_config,device=device, run_name=run_name)
 
         self.dataset =  DiskRewardDataset(self.data_fold)
         
@@ -159,7 +148,9 @@ class VideoRewardTrainer(RewardTrainer):
             Trains the reward model on the dataset created by create_datapoint.
         """
         self.dataset.refresh() # Refreshes the dataset before launching training.
-        self.train_steps(steps=steps, batch_size=batch_size, valid_every=20, step_log=2, save_every=1e6, pickup=False,
+        valid_every = max(1,200//batch_size)
+
+        self.train_steps(steps=steps, batch_size=batch_size, valid_every=valid_every, step_log=2, save_every=1e6, pickup=False,
                          num_workers=4)
         print('Training done !')
 

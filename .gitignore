@@ -10,3 +10,4 @@ repo.zip
 reward_model_train
 checkpoints
 *_data/
+lenia_rlhf

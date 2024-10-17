@@ -35,19 +35,44 @@ class RewardTrainer(Trainer):
 
     """
 
-    def __init__(self, model : nn.Module, data_loc, optimizer, scheduler, no_logging=True, run_config={}, device='cpu'):
+    def __init__(self, model : nn.Module, data_loc, optimizer=None, scheduler=None, lr_body=0., no_logging=True, run_config={}, run_name=None, device='cpu'):
         """
             Args:
             model : model to be trained. Probably to be hardcoded in inheriting classes
-            
+            data_loc : str, location where the dataset data will be saved
+            optimizer : optimizer to use. If None, will use AdamW with lr=1e-3 for the head, and lr=lr_body for the body.
+            scheduler : scheduler to use. If None, will use a LinearLR with start_factor=1e-5, end_factor=1, total_iters=300.
+            lr_body : float, learning rate for the body of the model. If 0., will freeze the body.
+            no_logging : bool, whether to log the training or not
+            run_config : dict, configuration for the run. Will be saved in the wandb run.
+            device : str, device to train the model on
         """
-        
-        super().__init__(model=model, optim=optimizer, scheduler=scheduler, save_loc='reward_model_train',project_name='reward_train',device=device,
-                         no_logging=no_logging, run_config=run_config)
+
+        body_params = model.body_params()
+
+        if(optimizer is None):
+            if(lr_body<=1e-8):
+                for param in body_params:
+                    param.requires_grad = False
+                optim = AdamW(model.head_params(),lr=1e-3)
+                lr_body= 0.
+            else :
+                optim = AdamW([
+                    {'params': body_params , 'lr': lr_body},
+                    {'params': model.head_params(), 'lr': 1e-3}
+                ])
+
+        if(scheduler is None):
+            schedu = LinearLR(optim,start_factor=1e-5, end_factor=1, total_iters=300)
+
+        run_config = {'lr_body':lr_body, 'lr_head':1e-3, 'model_config':model.config}
+        super().__init__(model=model, optim=optimizer, scheduler=scheduler, save_loc='lenia_rlhf',project_name='reward_train',device=device,
+                         no_logging=no_logging, run_config=run_config, run_name=run_name)
         
         self.data_fold = data_loc
 
         os.makedirs(data_loc, exist_ok=True)
+
     def create_datapoint(self, data1, data2, annotation) -> str:
         """
             Create a datapoint from the two datas given, provided the annotation.

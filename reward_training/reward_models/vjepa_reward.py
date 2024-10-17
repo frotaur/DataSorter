@@ -48,18 +48,14 @@ class VJEPAReward(ConfigModule):
 
         self.input_shape = (num_frames,3,224,224)
 
-    def vjepa_params(self):
-        """
-            Returns the parameters of the VJEPA model
-        """
-        return self.vjepa.parameters()
-
+    @property
     def body_params(self):
         """
             Returns the parameters of the VJEPA model
         """
         return self.vjepa.parameters()
 
+    @property
     def head_params(self):
         """
             Returns the parameters of the head of the model

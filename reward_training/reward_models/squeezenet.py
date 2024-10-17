@@ -24,6 +24,18 @@ class SqueezeReward(ConfigModule):
         # self.scorer.weight.data.fill_(1)
         # self.scorer.bias.data.fill_(0)
 
+    def body_params(self):
+        """
+            Returns the parameters of the SqueezeNet model
+        """
+        return self.features.parameters()
+
+    def head_params(self):
+        """
+            Returns the parameters of the head of the model
+        """
+        return self.scorer.parameters()
+
     def forward(self, x):
         B, C, H, W = x.shape
         assert C == 3, 'Input must have 3 channels'
