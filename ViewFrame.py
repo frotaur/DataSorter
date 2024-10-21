@@ -31,6 +31,7 @@ class ViewFrame(Frame):
 
         self.datapath = datapath
         self.rawdatapath = rawdatapath
+        self.outputfile = os.path.join(self.datapath,"output.json")
 
         self.vidpath = os.path.join(rawdatapath,"Videos")
         self.pairpath=os.path.join(datapath,"pairs","pairs.csv")
@@ -127,12 +128,21 @@ class ViewFrame(Frame):
             shutil.rmtree(os.path.dirname(self.pairpath))
     
         os.makedirs(os.path.dirname(self.pairpath),exist_ok=True)
+        with open(self.outputfile, 'r') as f:
+            existing_pairs = json.load(f)
+
+        # Create a set of existing pairs for faster lookup
+        existing_pairs_set = {(pair['left'], pair['right']) for pair in existing_pairs}
 
         data = {'left':[],'right':[]}
         for i in tqdm(range(len(self.all_data))) :
             for j in range(i+1,len(self.all_data)): 
-                data['left'].append(self.all_data[i])
-                data['right'].append(self.all_data[j])
+                left = self.all_data[i]
+                right = self.all_data[j]
+
+                if ((left, right) not in existing_pairs_set) and ((right, left) not in existing_pairs_set):
+                    data['left'].append(left)
+                    data['right'].append(right)
 
         df = pd.DataFrame(data)
         df.to_csv(self.pairpath,index=False)
