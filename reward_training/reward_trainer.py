@@ -95,6 +95,12 @@ class RewardTrainer(Trainer):
         """
         raise NotImplementedError('Method estimate_pair must be implemented in inheriting class.')
     
+    def _process_video(self, vidtens):
+        """
+            Given a video tensor, returns the processed tensor.
+        """
+        return vidtens
+    
     def annotation_to_data(self, annotations_file:str, video_folder:str):
         """
             Given an annotations file, and a data folder, will create the datapoints corresponding to the annotations.
@@ -127,6 +133,13 @@ class RewardTrainer(Trainer):
         
         print(f'Dataset created! Removed {missing} missing pairs from the annotations file.')
     
+    def video_to_tensor(self, video_path:str):
+        """
+            Given a video path, will return the video as a tensor.
+        """
+        video = (torchvision.io.read_video(video_path, output_format='TCHW', pts_unit='sec')[0]).float() / 255.
+        
+        return self._process_video(video)
     @property
     def num_datapoints(self):
         """

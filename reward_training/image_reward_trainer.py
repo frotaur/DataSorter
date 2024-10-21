@@ -41,7 +41,7 @@ class ImageRewardTrainer(RewardTrainer):
         str, the path to the saved datapoint
         """
 
-        data1, data2 = self._get_image_from_data(data1), self._get_image_from_data(data2)
+        data1, data2 = self._process_video(data1), self._process_video(data2)
 
         data_path = f'./{self.data_fold}/{len(os.listdir(self.data_fold))}.pt'
         # Save the data in the appropriate folder
@@ -49,7 +49,7 @@ class ImageRewardTrainer(RewardTrainer):
         
         return data_path
     
-    def _get_image_from_data(self, data):
+    def _process_video(self, data):
         """
             Returns the image from the data, which can be a video or a single frame.
 
@@ -76,7 +76,7 @@ class ImageRewardTrainer(RewardTrainer):
             (2,) tensor of floats, representing the probability of winning for each image.
         """
 
-        img1, img2 = self._get_image_from_data(data1)[None].to(self.device), self._get_image_from_data(data2)[None].to(self.device)
+        img1, img2 = self._process_video(data1)[None].to(self.device), self._process_video(data2)[None].to(self.device)
         rewards = torch.stack([self.model(img1),self.model(img2)],dim=1).squeeze() # (2,) 
         rewards = F.softmax(rewards, dim=0) # (2,), adjusted probabilities
 
