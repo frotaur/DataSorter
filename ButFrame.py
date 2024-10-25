@@ -100,10 +100,17 @@ class BestButFrame(Frame):
             activebackground="red",bg="light coral",foreground="navy",width=-15))
         self.buttons.append(Button(self.rows[3],command=self.upload_data,text="EXPORT RESULTS",font=("Unispace", 12, "bold"),
                                    activebackground="green", bg="light green", foreground="green", width=-15))
+        self.buttons.append(Button(self.rows[4],command=self.update_pairs,text="UPDATE PAIRS",font=("Unispace", 12, "bold"),
+                            activebackground="green", bg="light green", foreground="green", width=-15))
         for but in self.buttons:
             but.pack(side=LEFT,fill=X,padx=5,expand=1,pady=5)
         for row in self.rows:
             row.pack(side=TOP,fill=BOTH)
+        
+
+    def update_pairs(self):
+        self.ViewFrame.make_pair_data()
+        self.ViewFrame.next_data()
     
     def upload_data(self):
         savedata_dir_name = filedialog.askdirectory(title="Select a folder to save the data")

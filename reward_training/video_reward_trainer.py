@@ -55,6 +55,7 @@ class VideoRewardTrainer(RewardTrainer):
         
         return data_path
 
+    @torch.no_grad()
     def _process_video(self, tensvid):
         """
             Given a video tensor, returns the processed tensor.
@@ -65,19 +66,29 @@ class VideoRewardTrainer(RewardTrainer):
             Returns:
             (T',3,H',W') tensor, processed tensvid in model's format
         """
-        tar_T, _, tar_H, tar_W = self.input_shape
-        T = tensvid.shape[0]
-        assert tar_T <= tensvid.shape[0], f'tensvid {tensvid.shape[0]} frames, need at least {tar_T} frames'
+        tar_T, C, tar_H, tar_W = self.input_shape
+        if(len(tensvid.shape)==4):
+            tensvid = tensvid[None]
+            remove_batch = True
+        else:
+            remove_batch = False
+        T = tensvid.shape[1]
+
+        assert tar_T <= T, f'tensvid {T} frames, need at least {tar_T} frames'
 
         # Take tar_T equally spaced frames
-        tensvid = tensvid[torch.linspace(0,T-1,tar_T).long()]
+        tensvid = tensvid[:,torch.linspace(0,T-1,tar_T).long()]
+        B,_,_,H,W = tensvid.shape
 
-        tensvid = torch.einsum('tchw->cthw', tensvid) # interpolate expects channels first
+        tensvid = tensvid.reshape(B*tar_T,C,H,W) # (B*T,C,H,W) for interpolate
         # Resize the frames
         tensvid = F.interpolate(tensvid, size=(tar_H,tar_W), mode='bilinear')
-        tensvid = torch.einsum('cthw->tchw', tensvid) # back to normal
-        assert tensvid.shape == self.input_shape, f'tensvid shape {tensvid.shape} not equal to {self.input_shape}'
+        tensvid = tensvid.reshape(B,tar_T,C,tar_H,tar_W)
+        
+        if(remove_batch):
+            tensvid = tensvid[0]
 
+        
         return tensvid
 
     @torch.no_grad()
@@ -111,7 +122,9 @@ class VideoRewardTrainer(RewardTrainer):
         rewards = torch.stack([self.model(data1),self.model(data2)],dim=1).squeeze(-1) # (B,2) 
 
         loss = self.unadjusted_cross_entropy(rewards, annotation)
-    
+
+        if(self.do_step_log):
+            self.logger.log({'lr':self.scheduler.get_last_lr()[0]})
         return loss
 
     def process_batch_valid(self, batch_data):
@@ -133,6 +146,8 @@ class VideoRewardTrainer(RewardTrainer):
         """
             Returns the dataloader for the dataset.
         """
+        # fix the seed for reproducibility :
+        torch.manual_seed(0)
         mixer = torch.randperm(len(self.dataset))
 
         self.train_dataset = Subset(self.dataset, mixer[:int(0.85*len(mixer))])
@@ -151,6 +166,6 @@ class VideoRewardTrainer(RewardTrainer):
         valid_every = max(1,100//batch_size)
 
         self.train_steps(steps=steps, batch_size=batch_size, valid_every=valid_every, step_log=2, save_every=1e6, pickup=False,
-                         num_workers=4)
+                         num_workers=4,cooldown_finish=0.08)
         print('Training done !')
 

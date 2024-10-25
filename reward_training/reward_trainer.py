@@ -63,10 +63,11 @@ class RewardTrainer(Trainer):
                 ])
 
         if(scheduler is None):
-            schedu = LinearLR(optim,start_factor=1e-5, end_factor=1, total_iters=300)
-
+            schedu = LinearLR(optim,start_factor=1e-5, end_factor=1, total_iters=50)
+        elif(scheduler=='none'):
+            schedu = None
         run_config = {'lr_body':lr_body, 'lr_head':1e-3, 'model_config':model.config}
-        super().__init__(model=model, optim=optimizer, scheduler=scheduler, save_loc='lenia_rlhf',project_name='reward_train',device=device,
+        super().__init__(model=model, optim=optimizer, scheduler=schedu, save_loc='lenia_rlhf',project_name='reward_train',device=device,
                          no_logging=no_logging, run_config=run_config, run_name=run_name)
         
         self.data_fold = data_loc
